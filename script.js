@@ -1,1488 +1,1374 @@
-// بيانات العقارات الثابتة (49 عقار)
-const properties = [
+// متغيرات عامة
+let properties = []; // مصفوفة تخزين العقارات
+let currentEditId = null;
+let isAdmin = false;
+
+// تهيئة التطبيق عند اكتمال تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+  // تحميل العقارات
+  loadProperties();
+  
+  // إضافة مستمع لحالة الاتصال بالإنترنت
+  window.addEventListener('online', updateConnectionStatus);
+  window.addEventListener('offline', updateConnectionStatus);
+  
+  // تحديث عداد الزوار
+  const visitorCountDisplay = document.getElementById('visitorCountDisplay');
+  if (visitorCountDisplay) {
+    // استخدام التخزين المحلي لحفظ عدد الزوار
+    const visitorCount = localStorage.getItem('visitorCount') || 0;
+    visitorCountDisplay.textContent = parseInt(visitorCount) + 1;
+    localStorage.setItem('visitorCount', parseInt(visitorCount) + 1);
+  }
+  
+  // تفعيل الأحداث
+  initializeEvents();
+  
+  console.log("تم تهيئة التطبيق بنجاح");
+});
+
+// تحديث حالة الاتصال بالإنترنت
+function updateConnectionStatus() {
+  const statusElement = document.getElementById('connectionStatus');
+  if (!statusElement) return;
+  
+  if (navigator.onLine) {
+    statusElement.textContent = "متصل";
+    statusElement.classList.remove("text-danger");
+    statusElement.classList.add("text-success");
+  } else {
+    statusElement.textContent = "غير متصل";
+    statusElement.classList.remove("text-success");
+    statusElement.classList.add("text-danger");
+  }
+}
+
+// توليد معرف فريد
+function generateUniqueId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+// تهيئة الأحداث
+function initializeEvents() {
+  // زر تسجيل الدخول
+  const loginButton = document.getElementById('loginButton');
+  const loginPanel = document.getElementById('loginPanel');
+  
+  if (loginButton && loginPanel) {
+    loginButton.addEventListener('click', function() {
+      if (loginPanel.style.display === 'block') {
+        loginPanel.style.display = 'none';
+      } else {
+        loginPanel.style.display = 'block';
+      }
+    });
+    
+    // إخفاء لوحة تسجيل الدخول عند النقر خارجها
+    document.addEventListener('click', function(event) {
+      if (!loginButton.contains(event.target) && !loginPanel.contains(event.target) && loginPanel.style.display === 'block') {
+        loginPanel.style.display = 'none';
+      }
+    });
+  }
+  
+  // زر تقديم تسجيل الدخول
+  const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+  if (loginSubmitBtn) {
+    loginSubmitBtn.addEventListener('click', function() {
+      const username = document.getElementById('usernameInput').value;
+      const password = document.getElementById('passwordInput').value;
+      
+      if (username === 'admin' && password === 'admin123') {
+        isAdmin = true;
+        document.getElementById('adminPanel').style.display = 'block';
+        loginPanel.style.display = 'none';
+        document.getElementById('loginButton').innerHTML = '<i class="bi bi-person-check-fill"></i> مدير النظام';
+        
+        // تحديث إحصائيات لوحة الإدارة
+        updateAdminStatistics();
+        // عرض جدول العقارات في لوحة الإدارة
+        displayPropertiesTable(properties);
+      } else {
+        alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
+      }
+    });
+  }
+  
+  // زر حفظ العقار
+  const propertyForm = document.getElementById('propertyForm');
+  if (propertyForm) {
+    propertyForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      saveProperty();
+    });
+  }
+  
+  // زر مسح النموذج
+  const clearFormBtn = document.getElementById('clearFormBtn');
+  if (clearFormBtn) {
+    clearFormBtn.addEventListener('click', function() {
+      clearPropertyForm();
+    });
+  }
+  
+  // ترتيب العقارات
+  const sortLinks = document.querySelectorAll('[data-sort]');
+  sortLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const sortType = this.getAttribute('data-sort');
+      sortProperties(sortType);
+    });
+  });
+}
+
+// بيانات العقارات - 49 عقار
+const realEstateProperties = [
   {
-    id: 1,
-    title: "فيلا فاخرة في حي الوسام",
-    description: "فيلا فاخرة في حي الوسام، تتميز بالتصميم الحديث والمساحة الواسعة. تحتوي على 6 غرف نوم و4 حمامات ومجلس عربي وصالة واسعة ومطبخ مجهز بالكامل.",
+    id: "1",
+    title: "فيلا فاخرة في شمال الطائف",
     price: 1500000,
-    category: "فلل",
-    location: "الطائف - حي الوسام",
-    mainImage: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=774&q=80",
-    features: {
-      rooms: 6,
-      bathrooms: 4,
-      area: 350
-    },
-    type: "للبيع",
-    createdAt: 1694764800000,
-    key: "local_1",
-    badge: "featured"
+    type: "sale",
+    category: "فيلا",
+    location: "حي الشفا",
+    area: 450,
+    rooms: 6,
+    bathrooms: 5,
+    age: 2,
+    description: "فيلا فاخرة مكونة من دورين وملحق، تشطيب فاخر، حديقة خارجية، موقف سيارات، قريبة من الخدمات",
+    imageUrl: "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: true
+    }
   },
   {
-    id: 2,
-    title: "شقة مميزة في حي شهار",
-    description: "شقة فاخرة في حي شهار، تتكون من 3 غرف نوم وصالة واسعة ومطبخ مجهز. الشقة حديثة البناء وتطل على منظر خلاب.",
-    price: 650000,
-    category: "شقق",
-    location: "الطائف - حي شهار",
-    mainImage: "https://images.unsplash.com/photo-1574362848149-11496d93a7c7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1084&q=80",
-    features: {
-      rooms: 3,
-      bathrooms: 2,
-      area: 120
-    },
-    type: "للبيع",
-    createdAt: 1694851200000,
-    key: "local_2"
-  },
-  {
-    id: 3,
-    title: "أرض سكنية في حي الفيصلية",
-    description: "أرض سكنية مميزة في حي الفيصلية، في موقع استراتيجي قريب من الخدمات. مناسبة للبناء السكني.",
-    price: 800000,
-    category: "أراضي",
-    location: "الطائف - حي الفيصلية",
-    mainImage: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1032&q=80",
-    features: {
-      area: 625
-    },
-    type: "للبيع",
-    createdAt: 1694937600000,
-    key: "local_3",
-    badge: "pinned"
-  },
-  {
-    id: 4,
-    title: "شاليه فاخر للإيجار اليومي",
-    description: "شاليه فاخر للإيجار اليومي، يتكون من 3 غرف نوم وصالة واسعة ومسبح خاص. مناسب للعائلات والمناسبات الخاصة.",
-    price: 500,
-    category: "شاليهات",
-    location: "الطائف - طريق الهدا",
-    mainImage: "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 3,
-      bathrooms: 2,
-      area: 200
-    },
-    type: "للإيجار",
-    createdAt: 1695024000000,
-    key: "local_4"
-  },
-  {
-    id: 5,
-    title: "مكتب تجاري في وسط المدينة",
-    description: "مكتب تجاري في وسط المدينة، موقع مميز يصلح لجميع الأنشطة التجارية. المكتب مجهز بالكامل وجاهز للاستخدام.",
-    price: 35000,
-    category: "مكاتب",
-    location: "الطائف - وسط المدينة",
-    mainImage: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80",
-    features: {
-      rooms: 2,
-      bathrooms: 1,
-      area: 80
-    },
-    type: "للإيجار",
-    createdAt: 1695110400000,
-    key: "local_5",
-    badge: "exclusive"
-  },
-  {
-    id: 6,
-    title: "فيلا دوبلكس في السلامة",
-    description: "فيلا دوبلكس فاخرة في حي السلامة، تصميم عصري وإطلالة رائعة. تتكون من 5 غرف نوم ومجلسين وصالة كبيرة وحديقة خاصة.",
-    price: 1800000,
-    category: "فلل",
-    location: "الطائف - حي السلامة",
-    mainImage: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-    features: {
-      rooms: 5,
-      bathrooms: 5,
-      area: 400
-    },
-    type: "للبيع",
-    createdAt: 1695196800000,
-    key: "local_6"
-  },
-  {
-    id: 7,
-    title: "شقة مفروشة للإيجار الشهري",
-    description: "شقة مفروشة للإيجار الشهري، مؤثثة بالكامل ومجهزة بجميع الأجهزة الكهربائية. تتكون من غرفتين نوم وصالة ومطبخ.",
-    price: 2500,
-    category: "شقق",
-    location: "الطائف - حي الربوة",
-    mainImage: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 2,
-      bathrooms: 1,
-      area: 100
-    },
-    type: "للإيجار",
-    createdAt: 1695283200000,
-    key: "local_7"
-  },
-  {
-    id: 8,
-    title: "محل تجاري في مركز تسوق",
-    description: "محل تجاري في مركز تسوق مميز، موقع استراتيجي وواجهة زجاجية كبيرة. مناسب لجميع الأنشطة التجارية.",
-    price: 45000,
-    category: "محلات",
-    location: "الطائف - طريق الملك فهد",
-    mainImage: "https://images.unsplash.com/photo-1604754742629-3e0498a7991c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      area: 64
-    },
-    type: "للإيجار",
-    createdAt: 1695369600000,
-    key: "local_8",
-    badge: "featured"
-  },
-  {
-    id: 9,
-    title: "استراحة عائلية مميزة",
-    description: "استراحة عائلية مميزة تتكون من 4 غرف نوم ومجلس رجال ومجلس نساء وصالة واسعة ومسبح خاص. مناسبة للعائلات الكبيرة.",
-    price: 1200000,
-    category: "استراحات",
-    location: "الطائف - حي الضباب",
-    mainImage: "https://images.unsplash.com/photo-1595877244574-e90ce41ce089?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
-    features: {
-      rooms: 4,
-      bathrooms: 3,
-      area: 500
-    },
-    type: "للبيع",
-    createdAt: 1695456000000,
-    key: "local_9"
-  },
-  {
-    id: 10,
-    title: "أرض زراعية بالحوية",
-    description: "أرض زراعية مميزة في منطقة الحوية، تربة خصبة ومصدر مياه دائم. مناسبة للزراعة والاستثمار.",
-    price: 1500000,
-    category: "أراضي",
-    location: "الطائف - الحوية",
-    mainImage: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1032&q=80",
-    features: {
-      area: 5000
-    },
-    type: "للبيع",
-    createdAt: 1695542400000,
-    key: "local_10",
-    badge: "pinned"
-  },
-  {
-    id: 11,
-    title: "فيلا مودرن في حي النسيم",
-    description: "فيلا بتصميم مودرن في حي النسيم، تتميز بالخصوصية والإطلالة الرائعة. تتكون من 7 غرف و5 حمامات وحديقة خاصة.",
-    price: 2200000,
-    category: "فلل",
-    location: "الطائف - حي النسيم",
-    mainImage: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 7,
-      bathrooms: 5,
-      area: 450
-    },
-    type: "للبيع",
-    createdAt: 1695628800000,
-    key: "local_11"
-  },
-  {
-    id: 12,
-    title: "بنتهاوس فاخر وسط المدينة",
-    description: "بنتهاوس فاخر في وسط المدينة، يتميز بالإطلالة البانورامية على المدينة. يتكون من 4 غرف نوم وصالة كبيرة وتراس واسع.",
-    price: 1600000,
-    category: "شقق",
-    location: "الطائف - وسط المدينة",
-    mainImage: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 4,
-      bathrooms: 3,
-      area: 250
-    },
-    type: "للبيع",
-    createdAt: 1695715200000,
-    key: "local_12",
-    badge: "exclusive"
-  },
-  {
-    id: 13,
-    title: "مزرعة منتجة للبيع",
-    description: "مزرعة منتجة للبيع، تحتوي على أشجار مثمرة متنوعة وبئر ماء خاص. تشمل منزل مكون من 3 غرف ومجلس.",
-    price: 900000,
-    category: "مزارع",
-    location: "الطائف - الشفا",
-    mainImage: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1032&q=80",
-    features: {
-      rooms: 3,
-      bathrooms: 2,
-      area: 3000
-    },
-    type: "للبيع",
-    createdAt: 1695801600000,
-    key: "local_13"
-  },
-  {
-    id: 14,
-    title: "عمارة سكنية استثمارية",
-    description: "عمارة سكنية استثمارية، مكونة من 8 شقق مؤجرة بالكامل. عائد استثماري ممتاز ودخل شهري ثابت.",
-    price: 3500000,
-    category: "عمائر",
-    location: "الطائف - حي المثناة",
-    mainImage: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 24,
-      bathrooms: 16,
-      area: 800
-    },
-    type: "للبيع",
-    createdAt: 1695888000000,
-    key: "local_14",
-    badge: "featured"
-  },
-  {
-    id: 15,
-    title: "شقة غرفتين للإيجار",
-    description: "شقة مكونة من غرفتين نوم وصالة ومطبخ، نظيفة ومرتبة، موقع هادئ وقريب من الخدمات.",
-    price: 15000,
-    category: "شقق",
-    location: "الطائف - حي العزيزية",
-    mainImage: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 2,
-      bathrooms: 1,
-      area: 90
-    },
-    type: "للإيجار",
-    createdAt: 1695974400000,
-    key: "local_15"
-  },
-  {
-    id: 16,
-    title: "فيلا مؤثثة للإيجار السنوي",
-    description: "فيلا مؤثثة بالكامل للإيجار السنوي، تتكون من 5 غرف نوم وصالة كبيرة ومجلس وحديقة. مناسبة للعائلات.",
-    price: 80000,
-    category: "فلل",
-    location: "الطائف - حي الأمانة",
-    mainImage: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1175&q=80",
-    features: {
-      rooms: 5,
-      bathrooms: 4,
-      area: 380
-    },
-    type: "للإيجار",
-    createdAt: 1696060800000,
-    key: "local_16",
-    badge: "pinned"
-  },
-  {
-    id: 17,
-    title: "أرض تجارية بموقع مميز",
-    description: "أرض تجارية بموقع مميز على شارع تجاري رئيسي. فرصة استثمارية مميزة في منطقة حيوية.",
-    price: 2000000,
-    category: "أراضي",
-    location: "الطائف - شارع الجيش",
-    mainImage: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1032&q=80",
-    features: {
-      area: 900
-    },
-    type: "للبيع",
-    createdAt: 1696147200000,
-    key: "local_17"
-  },
-  {
-    id: 18,
-    title: "شقة غرفة وصالة للإيجار",
-    description: "شقة مكونة من غرفة نوم وصالة ومطبخ، مناسبة للعزاب أو الأزواج. موقع مميز وقريب من الخدمات.",
-    price: 12000,
-    category: "شقق",
-    location: "الطائف - حي الفيصلية",
-    mainImage: "https://images.unsplash.com/photo-1471623432079-b009d30b911d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 1,
-      bathrooms: 1,
-      area: 60
-    },
-    type: "للإيجار",
-    createdAt: 1696233600000,
-    key: "local_18",
-    badge: "exclusive"
-  },
-  {
-    id: 19,
-    title: "مكتب مجهز في مجمع تجاري",
-    description: "مكتب مجهز في مجمع تجاري حديث، مناسب للشركات والمكاتب المهنية. يشمل خدمات الأمن والنظافة.",
+    id: "2",
+    title: "شقة للإيجار في وسط الطائف",
     price: 25000,
-    category: "مكاتب",
-    location: "الطائف - طريق الملك عبدالعزيز",
-    mainImage: "https://images.unsplash.com/photo-1568992687947-868a62a9f521?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1032&q=80",
-    features: {
-      rooms: 3,
-      bathrooms: 2,
-      area: 120
-    },
-    type: "للإيجار",
-    createdAt: 1696320000000,
-    key: "local_19"
+    type: "rent",
+    category: "شقة",
+    location: "حي السلامة",
+    area: 120,
+    rooms: 3,
+    bathrooms: 2,
+    age: 5,
+    description: "شقة مميزة للإيجار السنوي، مكونة من ثلاث غرف وصالة ومطبخ، قريبة من جميع الخدمات والأسواق",
+    imageUrl: "https://images.pexels.com/photos/2462015/pexels-photo-2462015.jpeg",
+    badges: {
+      featured: false,
+      exclusive: true,
+      pinned: false
+    }
   },
   {
-    id: 20,
-    title: "فيلا فاخرة مع مسبح",
-    description: "فيلا فاخرة مع مسبح خاص في حي راقي. تتكون من 6 غرف نوم ومجلسين وصالة كبيرة وغرفة طعام.",
-    price: 2500000,
-    category: "فلل",
-    location: "الطائف - حي قروى",
-    mainImage: "https://images.unsplash.com/photo-1613977257363-707ba9348227?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 6,
-      bathrooms: 6,
-      area: 500
-    },
-    type: "للبيع",
-    createdAt: 1696406400000,
-    key: "local_20",
-    badge: "featured"
+    id: "3",
+    title: "عمارة استثمارية في الطائف",
+    price: 3200000,
+    type: "sale",
+    category: "عمارة",
+    location: "حي المثناة",
+    area: 800,
+    rooms: 12,
+    bathrooms: 12,
+    age: 8,
+    description: "عمارة استثمارية مكونة من 8 شقق مؤجرة بالكامل، دخل سنوي ممتاز، موقع استراتيجي",
+    imageUrl: "https://images.pexels.com/photos/681336/pexels-photo-681336.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: true
+    }
   },
   {
-    id: 21,
-    title: "دور أرضي مستقل",
-    description: "دور أرضي مستقل مع مدخل خاص وحوش. يتكون من 3 غرف نوم وصالة ومطبخ. مناسب للعائلات الصغيرة.",
-    price: 700000,
-    category: "أدوار",
-    location: "الطائف - حي الشرقية",
-    mainImage: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 3,
-      bathrooms: 2,
-      area: 250
-    },
-    type: "للبيع",
-    createdAt: 1696492800000,
-    key: "local_21"
+    id: "4",
+    title: "أرض سكنية للبيع في الطائف",
+    price: 600000,
+    type: "sale",
+    category: "أرض",
+    location: "حي الوسام",
+    area: 625,
+    rooms: 0,
+    bathrooms: 0,
+    age: 0,
+    description: "أرض سكنية مخططة وجاهزة للبناء، على شارعين، قريبة من المرافق الحكومية والخدمات",
+    imageUrl: "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg",
+    badges: {
+      featured: false,
+      exclusive: false,
+      pinned: false
+    }
   },
   {
-    id: 22,
-    title: "استراحة للإيجار اليومي",
-    description: "استراحة مميزة للإيجار اليومي، تتكون من 3 غرف ومجلس ومسبح ومكان للشواء. مناسبة للعائلات.",
+    id: "5",
+    title: "استراحة مميزة للإيجار اليومي",
     price: 800,
-    category: "استراحات",
-    location: "الطائف - حي الشفا",
-    mainImage: "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 3,
-      bathrooms: 2,
-      area: 400
-    },
-    type: "للإيجار",
-    createdAt: 1696579200000,
-    key: "local_22",
-    badge: "pinned"
+    type: "rent",
+    category: "استراحة",
+    location: "الحوية",
+    area: 350,
+    rooms: 4,
+    bathrooms: 3,
+    age: 3,
+    description: "استراحة فاخرة للإيجار اليومي، مسبح خاص، حديقة واسعة، مكان للشواء، ملعب أطفال",
+    imageUrl: "https://images.pexels.com/photos/1643389/pexels-photo-1643389.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: true
+    }
   },
   {
-    id: 23,
-    title: "أرض سكنية مخططة",
-    description: "أرض سكنية في مخطط معتمد، جاهزة للبناء مباشرة. موقع مميز وقريب من الخدمات.",
-    price: 450000,
-    category: "أراضي",
-    location: "الطائف - حي المطار",
-    mainImage: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1032&q=80",
-    features: {
-      area: 480
-    },
-    type: "للبيع",
-    createdAt: 1696665600000,
-    key: "local_23"
-  },
-  {
-    id: 24,
-    title: "شقة في برج جديد",
-    description: "شقة واسعة في برج سكني جديد، تتكون من 3 غرف نوم وصالة ومطبخ فاخر. يشمل المبنى مسبح ونادي صحي.",
-    price: 850000,
-    category: "شقق",
-    location: "الطائف - حي المروج",
-    mainImage: "https://images.unsplash.com/photo-1460317442991-0ec209397118?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 3,
-      bathrooms: 2,
-      area: 150
-    },
-    type: "للبيع",
-    createdAt: 1696752000000,
-    key: "local_24",
-    badge: "exclusive"
-  },
-  {
-    id: 25,
-    title: "محل للإيجار بموقع حيوي",
-    description: "محل تجاري للإيجار في موقع حيوي وذو حركة تجارية نشطة. مساحة واسعة وواجهة زجاجية كبيرة.",
-    price: 40000,
-    category: "محلات",
-    location: "الطائف - شارع الستين",
-    mainImage: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=958&q=80",
-    features: {
-      area: 80
-    },
-    type: "للإيجار",
-    createdAt: 1696838400000,
-    key: "local_25"
-  },
-  {
-    id: 26,
-    title: "شقة ستوديو مفروشة",
-    description: "شقة ستوديو مفروشة بالكامل، مناسبة للسكن الفردي. موقع مركزي وقريب من الخدمات.",
+    id: "6",
+    title: "دور أرضي للإيجار",
     price: 18000,
-    category: "شقق",
-    location: "الطائف - وسط المدينة",
-    mainImage: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1080&q=80",
-    features: {
-      rooms: 1,
-      bathrooms: 1,
-      area: 50
-    },
-    type: "للإيجار",
-    createdAt: 1696924800000,
-    key: "local_26",
-    badge: "featured"
+    type: "rent",
+    category: "دور",
+    location: "حي الربوة",
+    area: 180,
+    rooms: 4,
+    bathrooms: 2,
+    age: 10,
+    description: "دور أرضي للإيجار، مدخل مستقل، حوش خاص، قريب من المدارس والمساجد",
+    imageUrl: "https://images.pexels.com/photos/1029599/pexels-photo-1029599.jpeg",
+    badges: {
+      featured: false,
+      exclusive: false,
+      pinned: false
+    }
   },
   {
-    id: 27,
-    title: "فيلا حديثة بالنخيل",
-    description: "فيلا حديثة بحي النخيل، تصميم عصري وتشطيبات فاخرة. تتكون من 5 غرف نوم ومجلسين وصالة وحديقة.",
-    price: 1700000,
-    category: "فلل",
-    location: "الطائف - حي النخيل",
-    mainImage: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 5,
-      bathrooms: 4,
-      area: 420
-    },
-    type: "للبيع",
-    createdAt: 1697011200000,
-    key: "local_27"
-  },
-  {
-    id: 28,
-    title: "مستودع للإيجار",
-    description: "مستودع للإيجار بمساحة كبيرة، يصلح للتخزين أو كمقر للشركات. يشمل مكاتب إدارية ومواقف سيارات.",
-    price: 60000,
-    category: "مستودعات",
-    location: "الطائف - المنطقة الصناعية",
-    mainImage: "https://images.unsplash.com/photo-1565891741441-64926e441838?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1172&q=80",
-    features: {
-      area: 1000
-    },
-    type: "للإيجار",
-    createdAt: 1697097600000,
-    key: "local_28",
-    badge: "pinned"
-  },
-  {
-    id: 29,
-    title: "روف مميز للبيع",
-    description: "روف مميز للبيع يتكون من 3 غرف نوم وصالة كبيرة مع تراس واسع. إطلالة رائعة على المدينة.",
-    price: 950000,
-    category: "شقق",
-    location: "الطائف - حي الريان",
-    mainImage: "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 3,
-      bathrooms: 2,
-      area: 180
-    },
-    type: "للبيع",
-    createdAt: 1697184000000,
-    key: "local_29"
-  },
-  {
-    id: 30,
-    title: "أرض استثمارية كبيرة",
-    description: "أرض استثمارية كبيرة بموقع استراتيجي، مناسبة لإقامة مجمع سكني أو تجاري. استثمار مضمون بإذن الله.",
-    price: 5000000,
-    category: "أراضي",
-    location: "الطائف - طريق الرياض",
-    mainImage: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1032&q=80",
-    features: {
-      area: 10000
-    },
-    type: "للبيع",
-    createdAt: 1697270400000,
-    key: "local_30",
-    badge: "exclusive"
-  },
-  {
-    id: 31,
-    title: "شاليه مطل على البحر",
-    description: "شاليه مطل على البحر في منطقة هادئة، يتكون من غرفتين نوم وصالة ومطبخ. مناسب للاستجمام والاسترخاء.",
-    price: 400000,
-    category: "شاليهات",
-    location: "الطائف - عروج",
-    mainImage: "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 2,
-      bathrooms: 1,
-      area: 150
-    },
-    type: "للبيع",
-    createdAt: 1697356800000,
-    key: "local_31"
-  },
-  {
-    id: 32,
-    title: "شقة فاخرة بحي القيم",
-    description: "شقة فاخرة في حي القيم، تشطيبات عالية الجودة وتصميم عصري. تتكون من 3 غرف نوم وصالة كبيرة.",
-    price: 750000,
-    category: "شقق",
-    location: "الطائف - حي القيم",
-    mainImage: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 3,
-      bathrooms: 2,
-      area: 140
-    },
-    type: "للبيع",
-    createdAt: 1697443200000,
-    key: "local_32",
-    badge: "featured"
-  },
-  {
-    id: 33,
-    title: "محل تجاري للتقبيل",
-    description: "محل تجاري للتقبيل في موقع حيوي، مجهز بالكامل ويحتوي على ديكورات فاخرة. فرصة استثمارية مميزة.",
-    price: 100000,
-    category: "محلات",
-    location: "الطائف - شارع الحوية",
-    mainImage: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=958&q=80",
-    features: {
-      area: 60
-    },
-    type: "للبيع",
-    createdAt: 1697529600000,
-    key: "local_33"
-  },
-  {
-    id: 34,
-    title: "فيلا للإيجار السنوي",
-    description: "فيلا للإيجار السنوي في حي راقي، تتكون من 4 غرف نوم ومجلس وصالة ومطبخ. مناسبة للعائلات.",
-    price: 60000,
-    category: "فلل",
-    location: "الطائف - حي الخالدية",
-    mainImage: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1175&q=80",
-    features: {
-      rooms: 4,
-      bathrooms: 3,
-      area: 350
-    },
-    type: "للإيجار",
-    createdAt: 1697616000000,
-    key: "local_34",
-    badge: "pinned"
-  },
-  {
-    id: 35,
-    title: "أرض تجارية على طريق رئيسي",
-    description: "أرض تجارية على طريق رئيسي، تصلح لإقامة مجمع تجاري أو مول. استثمار مضمون في موقع استراتيجي.",
-    price: 3500000,
-    category: "أراضي",
-    location: "الطائف - طريق الملك فهد",
-    mainImage: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1032&q=80",
-    features: {
-      area: 1200
-    },
-    type: "للبيع",
-    createdAt: 1697702400000,
-    key: "local_35"
-  },
-  {
-    id: 36,
-    title: "مكتب فاخر للإيجار",
-    description: "مكتب فاخر للإيجار في مجمع تجاري حديث، مناسب للشركات والمكاتب المهنية. مجهز بالكامل وجاهز للاستخدام.",
+    id: "7",
+    title: "محل تجاري للإيجار",
     price: 35000,
-    category: "مكاتب",
-    location: "الطائف - شارع الستين",
-    mainImage: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80",
-    features: {
-      rooms: 3,
-      bathrooms: 2,
-      area: 150
-    },
-    type: "للإيجار",
-    createdAt: 1697788800000,
-    key: "local_36",
-    badge: "exclusive"
+    type: "rent",
+    category: "محل تجاري",
+    location: "شارع الستين",
+    area: 85,
+    rooms: 1,
+    bathrooms: 1,
+    age: 4,
+    description: "محل تجاري على شارع رئيسي، واجهة زجاجية، ديكورات حديثة، مكيف، مناسب لجميع الأنشطة التجارية",
+    imageUrl: "https://images.pexels.com/photos/264507/pexels-photo-264507.jpeg",
+    badges: {
+      featured: false,
+      exclusive: true,
+      pinned: true
+    }
   },
   {
-    id: 37,
-    title: "شقة عوائل بحي الوسام",
-    description: "شقة عوائل في حي الوسام، نظيفة ومرتبة، تتكون من 3 غرف نوم وصالة ومطبخ. سعر مناسب وموقع مميز.",
-    price: 18000,
-    category: "شقق",
-    location: "الطائف - حي الوسام",
-    mainImage: "https://images.unsplash.com/photo-1574362848149-11496d93a7c7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1084&q=80",
-    features: {
-      rooms: 3,
-      bathrooms: 2,
-      area: 120
-    },
-    type: "للإيجار",
-    createdAt: 1697875200000,
-    key: "local_37"
+    id: "8",
+    title: "مزرعة للبيع جنوب الطائف",
+    price: 1200000,
+    type: "sale",
+    category: "مزرعة",
+    location: "الهدا",
+    area: 2500,
+    rooms: 3,
+    bathrooms: 2,
+    age: 15,
+    description: "مزرعة مثمرة للبيع، بئر خاص، أشجار متنوعة، بيت للسكن، أسوار من جميع الجهات",
+    imageUrl: "https://images.pexels.com/photos/235725/pexels-photo-235725.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: false
+    }
   },
   {
-    id: 38,
-    title: "استراحة كبيرة للبيع",
-    description: "استراحة كبيرة للبيع، تتكون من 5 غرف نوم ومجلسين ومسبح كبير وحديقة واسعة. مناسبة للعائلات الكبيرة.",
-    price: 1800000,
-    category: "استراحات",
-    location: "الطائف - حي الضباب",
-    mainImage: "https://images.unsplash.com/photo-1595877244574-e90ce41ce089?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
-    features: {
-      rooms: 5,
-      bathrooms: 4,
-      area: 800
-    },
-    type: "للبيع",
-    createdAt: 1697961600000,
-    key: "local_38",
-    badge: "featured"
+    id: "9",
+    title: "فيلا مفروشة للإيجار الشهري",
+    price: 8000,
+    type: "rent",
+    category: "فيلا",
+    location: "الشفا",
+    area: 320,
+    rooms: 5,
+    bathrooms: 4,
+    age: 1,
+    description: "فيلا حديثة مفروشة بالكامل للإيجار الشهري، مكيفات مركزية، مسبح صغير، حديقة، نظام أمان",
+    imageUrl: "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg",
+    badges: {
+      featured: true,
+      exclusive: true,
+      pinned: true
+    }
   },
   {
-    id: 39,
-    title: "أرض سكنية بسعر مغري",
-    description: "أرض سكنية بسعر مغري، موقع مميز وقريب من الخدمات. فرصة لا تعوض للراغبين في البناء.",
+    id: "10",
+    title: "مكتب إداري فاخر",
+    price: 45000,
+    type: "rent",
+    category: "مكتب",
+    location: "وسط المدينة",
+    area: 110,
+    rooms: 3,
+    bathrooms: 2,
+    age: 2,
+    description: "مكتب إداري فاخر للإيجار السنوي، مقسم إلى 3 غرف، استقبال، قاعة اجتماعات، مطبخ صغير",
+    imageUrl: "https://images.pexels.com/photos/267507/pexels-photo-267507.jpeg",
+    badges: {
+      featured: false,
+      exclusive: true,
+      pinned: false
+    }
+  },
+  {
+    id: "11",
+    title: "شقة دوبلكس للبيع",
+    price: 850000,
+    type: "sale",
+    category: "شقة",
+    location: "حي النزهة",
+    area: 220,
+    rooms: 5,
+    bathrooms: 3,
+    age: 3,
+    description: "شقة دوبلكس فاخرة للبيع، تشطيب راقي، تكييف مركزي، موقف خاص، غرفة خادمة، مدخل مستقل",
+    imageUrl: "https://images.pexels.com/photos/1918291/pexels-photo-1918291.jpeg",
+    badges: {
+      featured: false,
+      exclusive: false,
+      pinned: true
+    }
+  },
+  {
+    id: "12",
+    title: "أرض تجارية في موقع حيوي",
+    price: 2500000,
+    type: "sale",
+    category: "أرض",
+    location: "شارع الملك عبدالعزيز",
+    area: 900,
+    rooms: 0,
+    bathrooms: 0,
+    age: 0,
+    description: "أرض تجارية على شارع رئيسي، تصلح لإقامة مجمع تجاري أو فندق، كروكي جاهز، جميع الخدمات متوفرة",
+    imageUrl: "https://images.pexels.com/photos/63238/pexels-photo-63238.jpeg",
+    badges: {
+      featured: true,
+      exclusive: true,
+      pinned: true
+    }
+  },
+  {
+    id: "13",
+    title: "استراحة كبيرة للمناسبات",
+    price: 1500,
+    type: "rent",
+    category: "استراحة",
+    location: "السر",
+    area: 600,
+    rooms: 6,
+    bathrooms: 4,
+    age: 5,
+    description: "استراحة واسعة للإيجار اليومي، تصلح للمناسبات والأفراح، صالة كبيرة، مسبح، قسم للعائلات، مواقف واسعة",
+    imageUrl: "https://images.pexels.com/photos/32870/pexels-photo.jpg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: false
+    }
+  },
+  {
+    id: "14",
+    title: "بيت شعبي للبيع",
     price: 350000,
-    category: "أراضي",
-    location: "الطائف - حي النسيم",
-    mainImage: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1032&q=80",
-    features: {
-      area: 400
-    },
-    type: "للبيع",
-    createdAt: 1698048000000,
-    key: "local_39"
+    type: "sale",
+    category: "دور",
+    location: "حي الشهداء",
+    area: 200,
+    rooms: 4,
+    bathrooms: 2,
+    age: 20,
+    description: "بيت شعبي للبيع، يصلح للسكن أو الاستثمار، موقع حيوي، قريب من السوق والمسجد والمدارس",
+    imageUrl: "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg",
+    badges: {
+      featured: false,
+      exclusive: false,
+      pinned: false
+    }
   },
   {
-    id: 40,
-    title: "شقة مفروشة للإيجار اليومي",
-    description: "شقة مفروشة للإيجار اليومي، مناسبة للعائلات والزوار. موقع مركزي وقريب من المعالم السياحية.",
-    price: 250,
-    category: "شقق",
-    location: "الطائف - وسط المدينة",
-    mainImage: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 2,
-      bathrooms: 1,
-      area: 90
-    },
-    type: "للإيجار",
-    createdAt: 1698134400000,
-    key: "local_40",
-    badge: "pinned"
+    id: "15",
+    title: "عمارة سكنية حديثة",
+    price: 4200000,
+    type: "sale",
+    category: "عمارة",
+    location: "حي الفيصلية",
+    area: 950,
+    rooms: 16,
+    bathrooms: 16,
+    age: 1,
+    description: "عمارة سكنية حديثة البناء، مكونة من 8 شقق فاخرة، مصعد، مواقف، نظام أمان، دخل استثماري ممتاز",
+    imageUrl: "https://images.pexels.com/photos/2079234/pexels-photo-2079234.jpeg",
+    badges: {
+      featured: true,
+      exclusive: true,
+      pinned: true
+    }
   },
   {
-    id: 41,
-    title: "دور علوي مستقل",
-    description: "دور علوي مستقل مع سطح خاص، يتكون من 4 غرف نوم وصالة ومطبخ. مدخل خاص ومظلة للسيارة.",
-    price: 750000,
-    category: "أدوار",
-    location: "الطائف - حي الشرقية",
-    mainImage: "https://images.unsplash.com/photo-1576941089067-2de3c901e126?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1086&q=80",
-    features: {
-      rooms: 4,
-      bathrooms: 3,
-      area: 280
-    },
-    type: "للبيع",
-    createdAt: 1698220800000,
-    key: "local_41"
+    id: "16",
+    title: "محل للإيجار - جاليري",
+    price: 60000,
+    type: "rent",
+    category: "محل تجاري",
+    location: "شارع الجامعة",
+    area: 120,
+    rooms: 1,
+    bathrooms: 1,
+    age: 2,
+    description: "محل تجاري فاخر بتصميم عصري، يصلح لمعارض الملابس والمجوهرات، واجهة كبيرة، ارتفاع السقف 4 متر",
+    imageUrl: "https://images.pexels.com/photos/264618/pexels-photo-264618.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: true
+    }
   },
   {
-    id: 42,
-    title: "محل للإيجار بشارع تجاري",
-    description: "محل للإيجار في شارع تجاري نشط، مساحة مناسبة ويصلح لجميع الأنشطة التجارية. سعر تنافسي.",
-    price: 25000,
-    category: "محلات",
-    location: "الطائف - شارع الجيش",
-    mainImage: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=958&q=80",
-    features: {
-      area: 50
-    },
-    type: "للإيجار",
-    createdAt: 1698307200000,
-    key: "local_42",
-    badge: "exclusive"
+    id: "17",
+    title: "مزرعة مطورة للاستثمار السياحي",
+    price: 3500000,
+    type: "sale",
+    category: "مزرعة",
+    location: "الشفا",
+    area: 5000,
+    rooms: 4,
+    bathrooms: 3,
+    age: 8,
+    description: "مزرعة متكاملة مطورة للاستثمار السياحي، استراحات، مسابح، ملاعب، مطعم، بيوت شعر، أشجار مثمرة، آبار",
+    imageUrl: "https://images.pexels.com/photos/259580/pexels-photo-259580.jpeg",
+    badges: {
+      featured: true,
+      exclusive: true,
+      pinned: true
+    }
   },
   {
-    id: 43,
-    title: "فيلا درج صالة وشقتين",
-    description: "فيلا درج صالة وشقتين، تصميم حديث وتشطيبات فاخرة. مناسبة للسكن العائلي والاستثمار.",
-    price: 1300000,
-    category: "فلل",
-    location: "الطائف - حي العزيزية",
-    mainImage: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 7,
-      bathrooms: 5,
-      area: 400
-    },
-    type: "للبيع",
-    createdAt: 1698393600000,
-    key: "local_43"
-  },
-  {
-    id: 44,
-    title: "عمارة سكنية جديدة",
-    description: "عمارة سكنية جديدة مكونة من 6 شقق، دخل شهري ممتاز. فرصة استثمارية مميزة في موقع حيوي.",
-    price: 2800000,
-    category: "عمائر",
-    location: "الطائف - حي المثناة",
-    mainImage: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 18,
-      bathrooms: 12,
-      area: 600
-    },
-    type: "للبيع",
-    createdAt: 1698480000000,
-    key: "local_44",
-    badge: "featured"
-  },
-  {
-    id: 45,
-    title: "مزرعة للبيع بالشفا",
-    description: "مزرعة للبيع في منطقة الشفا، تحتوي على بيت مكون من 3 غرف وأشجار مثمرة وبئر ماء. هواء نقي ومنظر طبيعي.",
-    price: 700000,
-    category: "مزارع",
-    location: "الطائف - الشفا",
-    mainImage: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1032&q=80",
-    features: {
-      rooms: 3,
-      bathrooms: 1,
-      area: 2000
-    },
-    type: "للبيع",
-    createdAt: 1698566400000,
-    key: "local_45"
-  },
-  {
-    id: 46,
-    title: "شقة شبه مفروشة للإيجار",
-    description: "شقة شبه مفروشة للإيجار، تحتوي على 2 غرفة نوم وصالة ومطبخ. المكيفات والستائر موجودة.",
-    price: 16000,
-    category: "شقق",
-    location: "الطائف - حي المنتزه",
-    mainImage: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 2,
-      bathrooms: 1,
-      area: 90
-    },
-    type: "للإيجار",
-    createdAt: 1698652800000,
-    key: "local_46",
-    badge: "pinned"
-  },
-  {
-    id: 47,
-    title: "استراحة مميزة بحي الضباب",
-    description: "استراحة مميزة في حي الضباب، تتكون من فيلا رئيسية و3 شاليهات و مسبح كبير وحديقة. مناسبة للاستثمار.",
+    id: "18",
+    title: "فيلا مودرن بتصميم فريد",
     price: 2200000,
-    category: "استراحات",
-    location: "الطائف - حي الضباب",
-    mainImage: "https://images.unsplash.com/photo-1595877244574-e90ce41ce089?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
-    features: {
-      rooms: 8,
-      bathrooms: 6,
-      area: 1200
-    },
-    type: "للبيع",
-    createdAt: 1698739200000,
-    key: "local_47"
+    type: "sale",
+    category: "فيلا",
+    location: "حي الفيصلية",
+    area: 400,
+    rooms: 5,
+    bathrooms: 5,
+    age: 0,
+    description: "فيلا حديثة بتصميم مودرن فريد، تشطيبات فاخرة، نظام منزل ذكي، حديقة، مسبح، غرفة سينما، ضمانات على جميع التمديدات",
+    imageUrl: "https://images.pexels.com/photos/1732414/pexels-photo-1732414.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: true
+    }
   },
   {
-    id: 48,
-    title: "شقة فاخرة في أبراج سكنية",
-    description: "شقة فاخرة في مجمع أبراج سكنية راقي، إطلالة رائعة ومرافق متكاملة. تتكون من 4 غرف نوم وصالة واسعة.",
-    price: 950000,
-    category: "شقق",
-    location: "الطائف - حي السلامة",
-    mainImage: "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-    features: {
-      rooms: 4,
-      bathrooms: 3,
-      area: 180
-    },
-    type: "للبيع",
-    createdAt: 1698825600000,
-    key: "local_48",
-    badge: "exclusive"
+    id: "19",
+    title: "شقة سكنية بإطلالة رائعة",
+    price: 600000,
+    type: "sale",
+    category: "شقة",
+    location: "الشفا",
+    area: 150,
+    rooms: 4,
+    bathrooms: 3,
+    age: 2,
+    description: "شقة سكنية فاخرة في عمارة حديثة، إطلالة رائعة، تشطيب فاخر، غرفة ماستر مع حمام خاص، صالة واسعة، مطبخ راكب",
+    imageUrl: "https://images.pexels.com/photos/1370704/pexels-photo-1370704.jpeg",
+    badges: {
+      featured: false,
+      exclusive: true,
+      pinned: false
+    }
   },
   {
-    id: 49,
-    title: "مستودع كبير للإيجار",
-    description: "مستودع كبير للإيجار في المنطقة الصناعية، يصلح للتخزين أو المستودعات اللوجستية. سعر تنافسي.",
-    price: 80000,
-    category: "مستودعات",
-    location: "الطائف - المنطقة الصناعية",
-    mainImage: "https://images.unsplash.com/photo-1565891741441-64926e441838?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1172&q=80",
-    features: {
-      area: 1500
-    },
-    type: "للإيجار",
-    createdAt: 1698912000000,
-    key: "local_49",
-    badge: "featured"
+    id: "20",
+    title: "دور علوي مستقل للإيجار",
+    price: 22000,
+    type: "rent",
+    category: "دور",
+    location: "حي الوسام",
+    area: 200,
+    rooms: 5,
+    bathrooms: 3,
+    age: 5,
+    description: "دور علوي للإيجار السنوي، مدخل مستقل، سطح خاص، مكيفات سبليت، مطبخ راكب، قريب من الخدمات",
+    imageUrl: "https://images.pexels.com/photos/1546166/pexels-photo-1546166.jpeg",
+    badges: {
+      featured: false,
+      exclusive: false,
+      pinned: true
+    }
+  },
+  {
+    id: "21",
+    title: "مجمع فلل فاخر للبيع",
+    price: 9500000,
+    type: "sale",
+    category: "فيلا",
+    location: "السلامة",
+    area: 1500,
+    rooms: 20,
+    bathrooms: 16,
+    age: 3,
+    description: "مجمع فلل فاخر يتكون من 4 فلل متصلة بتصاميم مختلفة، مسبح مشترك، حديقة كبيرة، غرف حارس وسائق، مناسب للعائلة الكبيرة",
+    imageUrl: "https://images.pexels.com/photos/53610/large-home-residential-house-architecture-53610.jpeg",
+    badges: {
+      featured: true,
+      exclusive: true,
+      pinned: true
+    }
+  },
+  {
+    id: "22",
+    title: "أرض زراعية للبيع",
+    price: 400000,
+    type: "sale",
+    category: "أرض",
+    location: "الهدا",
+    area: 3000,
+    rooms: 0,
+    bathrooms: 0,
+    age: 0,
+    description: "أرض زراعية خصبة، تربة متميزة، بئر ماء عذب، محاطة بمزارع منتجة، تصلح لجميع أنواع الزراعة، صك شرعي",
+    imageUrl: "https://images.pexels.com/photos/440731/pexels-photo-440731.jpeg",
+    badges: {
+      featured: false,
+      exclusive: false,
+      pinned: false
+    }
+  },
+  {
+    id: "23",
+    title: "استراحة فاخرة مع ملعب كرة قدم",
+    price: 2500,
+    type: "rent",
+    category: "استراحة",
+    location: "حي الواحة",
+    area: 800,
+    rooms: 5,
+    bathrooms: 4,
+    age: 4,
+    description: "استراحة فخمة لإيجار يومي، مسبح مسخن، ملعب كرة قدم خماسي، صالة ألعاب، مكان مخصص للشواء، غرف واسعة",
+    imageUrl: "https://images.pexels.com/photos/32870/pexels-photo.jpg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: true
+    }
+  },
+  {
+    id: "24",
+    title: "مكتب تجاري في برج مركزي",
+    price: 75000,
+    type: "rent",
+    category: "مكتب",
+    location: "وسط المدينة",
+    area: 180,
+    rooms: 4,
+    bathrooms: 2,
+    age: 1,
+    description: "مكتب فاخر في برج تجاري حديث، إطلالة مميزة، تشطيبات فاخرة، نظام تكييف مركزي، خدمات أمن وصيانة 24 ساعة",
+    imageUrl: "https://images.pexels.com/photos/380768/pexels-photo-380768.jpeg",
+    badges: {
+      featured: true,
+      exclusive: true,
+      pinned: false
+    }
+  },
+  {
+    id: "25",
+    title: "محلات تجارية في مجمع جديد",
+    price: 90000,
+    type: "rent",
+    category: "محل تجاري",
+    location: "شارع الستين",
+    area: 95,
+    rooms: 1,
+    bathrooms: 1,
+    age: 0,
+    description: "محلات تجارية في مجمع حديث، مساحات مختلفة، موقع مميز، واجهات زجاجية، مواقف واسعة، أنظمة أمان متطورة",
+    imageUrl: "https://images.pexels.com/photos/3933881/pexels-photo-3933881.jpeg",
+    badges: {
+      featured: false,
+      exclusive: false,
+      pinned: true
+    }
+  },
+  {
+    id: "26",
+    title: "بيت شعبي قابل للهدم",
+    price: 900000,
+    type: "sale",
+    category: "دور",
+    location: "حي القمرية",
+    area: 350,
+    rooms: 5,
+    bathrooms: 2,
+    age: 35,
+    description: "بيت شعبي على أرض كبيرة قابل للهدم والبناء، موقع مميز، مساحة كبيرة، فرصة استثمارية",
+    imageUrl: "https://images.pexels.com/photos/2249063/pexels-photo-2249063.jpeg",
+    badges: {
+      featured: false,
+      exclusive: true,
+      pinned: false
+    }
+  },
+  {
+    id: "27",
+    title: "عمارة تجارية في موقع حيوي",
+    price: 7500000,
+    type: "sale",
+    category: "عمارة",
+    location: "شارع الملك فهد",
+    area: 1200,
+    rooms: 8,
+    bathrooms: 10,
+    age: 10,
+    description: "عمارة تجارية في موقع حيوي، الدور الأرضي محلات والأدوار العلوية مكاتب، دخل سنوي مرتفع، فرصة استثمارية مميزة",
+    imageUrl: "https://images.pexels.com/photos/534220/pexels-photo-534220.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: true
+    }
+  },
+  {
+    id: "28",
+    title: "فيلا نصف مفروشة للإيجار",
+    price: 60000,
+    type: "rent",
+    category: "فيلا",
+    location: "حي النزهة",
+    area: 380,
+    rooms: 5,
+    bathrooms: 4,
+    age: 7,
+    description: "فيلا نصف مفروشة للإيجار السنوي، أثاث فاخر، حديقة، غرفة خادمة، مطبخ مجهز، مكيفات في جميع الغرف",
+    imageUrl: "https://images.pexels.com/photos/206172/pexels-photo-206172.jpeg",
+    badges: {
+      featured: false,
+      exclusive: true,
+      pinned: true
+    }
+  },
+  {
+    id: "29",
+    title: "أرض سكنية مميزة",
+    price: 750000,
+    type: "sale",
+    category: "أرض",
+    location: "حي العقيق",
+    area: 500,
+    rooms: 0,
+    bathrooms: 0,
+    age: 0,
+    description: "أرض سكنية في مخطط راقي، شوارع واسعة، جميع الخدمات متوفرة، قريبة من المرافق الحكومية والمدارس والمساجد",
+    imageUrl: "https://images.pexels.com/photos/36029/arpa-de-piedra-diapason-segovia-spain.jpg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: false
+    }
+  },
+  {
+    id: "30",
+    title: "مزرعة مثمرة للبيع",
+    price: 1800000,
+    type: "sale",
+    category: "مزرعة",
+    location: "السيل الكبير",
+    area: 4000,
+    rooms: 3,
+    bathrooms: 2,
+    age: 15,
+    description: "مزرعة مثمرة للبيع، أشجار متنوعة، بئر ارتوازي، استراحة، مسبح، أسوار مبنية، كهرباء، طرق معبدة",
+    imageUrl: "https://images.pexels.com/photos/247599/pexels-photo-247599.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: true
+    }
+  },
+  {
+    id: "31",
+    title: "شقة واسعة بموقع مميز",
+    price: 32000,
+    type: "rent",
+    category: "شقة",
+    location: "الحمراء",
+    area: 160,
+    rooms: 4,
+    bathrooms: 2,
+    age: 3,
+    description: "شقة واسعة للإيجار السنوي، موقع مميز، مدخل مستقل، مطبخ راكب، غرفة غسيل، قريبة من جميع الخدمات",
+    imageUrl: "https://images.pexels.com/photos/2251247/pexels-photo-2251247.jpeg",
+    badges: {
+      featured: false,
+      exclusive: false,
+      pinned: true
+    }
+  },
+  {
+    id: "32",
+    title: "دور أرضي فاخر مع حديقة",
+    price: 40000,
+    type: "rent",
+    category: "دور",
+    location: "السلامة",
+    area: 250,
+    rooms: 5,
+    bathrooms: 3,
+    age: 2,
+    description: "دور أرضي فاخر للإيجار السنوي، حديقة خاصة، مدخل مستقل، مطبخ راكب، غرفة سائق، قريب من المدارس والمساجد",
+    imageUrl: "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: true
+    }
+  },
+  {
+    id: "33",
+    title: "استراحة عائلية صغيرة",
+    price: 500,
+    type: "rent",
+    category: "استراحة",
+    location: "الشرقية",
+    area: 200,
+    rooms: 2,
+    bathrooms: 2,
+    age: 8,
+    description: "استراحة صغيرة هادئة للإيجار اليومي، مناسبة للعائلات الصغيرة، حديقة، مسبح صغير، مكان للشواء، أمان خصوصية",
+    imageUrl: "https://images.pexels.com/photos/2351649/pexels-photo-2351649.jpeg",
+    badges: {
+      featured: false,
+      exclusive: false,
+      pinned: false
+    }
+  },
+  {
+    id: "34",
+    title: "مكتب تجاري صغير",
+    price: 15000,
+    type: "rent",
+    category: "مكتب",
+    location: "حي المثناة",
+    area: 60,
+    rooms: 2,
+    bathrooms: 1,
+    age: 6,
+    description: "مكتب تجاري صغير للإيجار السنوي، مناسب للمهن الحرة والمكاتب الصغيرة، موقع وسط المدينة، خدمات مشتركة",
+    imageUrl: "https://images.pexels.com/photos/1957477/pexels-photo-1957477.jpeg",
+    badges: {
+      featured: false,
+      exclusive: false,
+      pinned: false
+    }
+  },
+  {
+    id: "35",
+    title: "محل تجاري على شارع رئيسي",
+    price: 45000,
+    type: "rent",
+    category: "محل تجاري",
+    location: "شارع الملك خالد",
+    area: 75,
+    rooms: 1,
+    bathrooms: 1,
+    age: 5,
+    description: "محل تجاري على شارع رئيسي، واجهة كبيرة، ديكورات حديثة، نظام إنذار وكاميرات مراقبة، مناسب لمختلف الأنشطة",
+    imageUrl: "https://images.pexels.com/photos/3694869/pexels-photo-3694869.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: false
+    }
+  },
+  {
+    id: "36",
+    title: "أرض تجارية للاستثمار",
+    price: 3200000,
+    type: "sale",
+    category: "أرض",
+    location: "شارع الجامعة",
+    area: 1200,
+    rooms: 0,
+    bathrooms: 0,
+    age: 0,
+    description: "أرض تجارية للاستثمار، موقع استراتيجي على شارع حيوي، تصلح لإقامة مشروع تجاري كبير، كروكي وصك جاهز",
+    imageUrl: "https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: true
+    }
+  },
+  {
+    id: "37",
+    title: "فيلا جديدة للبيع بتصميم عصري",
+    price: 1900000,
+    type: "sale",
+    category: "فيلا",
+    location: "الوسام",
+    area: 420,
+    rooms: 6,
+    bathrooms: 5,
+    age: 0,
+    description: "فيلا جديدة للبيع بتصميم عصري، مودرن، دورين وملحق، مصعد منزلي، نظام تكييف مركزي، حديقة، مسبح، نظام منزل ذكي",
+    imageUrl: "https://images.pexels.com/photos/1127119/pexels-photo-1127119.jpeg",
+    badges: {
+      featured: true,
+      exclusive: true,
+      pinned: true
+    }
+  },
+  {
+    id: "38",
+    title: "شقة غرفتين وصالة",
+    price: 18000,
+    type: "rent",
+    category: "شقة",
+    location: "حي الفيصلية",
+    area: 90,
+    rooms: 2,
+    bathrooms: 1,
+    age: 4,
+    description: "شقة نظيفة مكونة من غرفتين وصالة ومطبخ، الماء والكهرباء مشمولة، مكيفات، قريبة من الخدمات والمواصلات",
+    imageUrl: "https://images.pexels.com/photos/1795502/pexels-photo-1795502.jpeg",
+    badges: {
+      featured: false,
+      exclusive: false,
+      pinned: false
+    }
+  },
+  {
+    id: "39",
+    title: "عمارة سكنية في حي راقي",
+    price: 5500000,
+    type: "sale",
+    category: "عمارة",
+    location: "حي الروضة",
+    area: 1100,
+    rooms: 20,
+    bathrooms: 20,
+    age: 6,
+    description: "عمارة سكنية في حي راقي، مكونة من 10 شقق فاخرة مؤجرة بالكامل، دخل سنوي ممتاز، مصعد، مواقف سيارات، مولد كهرباء احتياطي",
+    imageUrl: "https://images.pexels.com/photos/273683/pexels-photo-273683.jpeg",
+    badges: {
+      featured: true,
+      exclusive: true,
+      pinned: true
+    }
+  },
+  {
+    id: "40",
+    title: "بيت شعبي مجدد للإيجار",
+    price: 12000,
+    type: "rent",
+    category: "دور",
+    location: "حي الشهداء",
+    area: 150,
+    rooms: 3,
+    bathrooms: 2,
+    age: 15,
+    description: "بيت شعبي مجدد للإيجار السنوي، ترميم حديث، مكيفات، خزان ماء خاص، قريب من الخدمات وسوق الخضار",
+    imageUrl: "https://images.pexels.com/photos/358636/pexels-photo-358636.jpeg",
+    badges: {
+      featured: false,
+      exclusive: false,
+      pinned: false
+    }
+  },
+  {
+    id: "41",
+    title: "استراحة مميزة بإطلالة جبلية",
+    price: 1200,
+    type: "rent",
+    category: "استراحة",
+    location: "الشفا",
+    area: 450,
+    rooms: 4,
+    bathrooms: 3,
+    age: 6,
+    description: "استراحة مميزة بإطلالة جبلية، للإيجار اليومي، جلسات داخلية وخارجية، مسبح، ملعب أطفال، حديقة واسعة",
+    imageUrl: "https://images.pexels.com/photos/1612351/pexels-photo-1612351.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: true
+    }
+  },
+  {
+    id: "42",
+    title: "مزرعة استثمارية كبيرة",
+    price: 4500000,
+    type: "sale",
+    category: "مزرعة",
+    location: "الهدا",
+    area: 10000,
+    rooms: 8,
+    bathrooms: 6,
+    age: 12,
+    description: "مزرعة استثمارية كبيرة، مباني سكنية، استراحات، مسابح، قاعة احتفالات، آبار ارتوازية، أشجار مثمرة، مشروع استثماري ناجح",
+    imageUrl: "https://images.pexels.com/photos/1459495/pexels-photo-1459495.jpeg",
+    badges: {
+      featured: true,
+      exclusive: true,
+      pinned: true
+    }
+  },
+  {
+    id: "43",
+    title: "مكتب إداري كبير",
+    price: 55000,
+    type: "rent",
+    category: "مكتب",
+    location: "وسط المدينة",
+    area: 220,
+    rooms: 6,
+    bathrooms: 3,
+    age: 3,
+    description: "مكتب إداري كبير للإيجار السنوي، موقع مميز، قاعة اجتماعات، غرف إدارية، استقبال فاخر، قابل للتقسيم حسب الاحتياج",
+    imageUrl: "https://images.pexels.com/photos/267507/pexels-photo-267507.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: true
+    }
+  },
+  {
+    id: "44",
+    title: "محل تجاري زاوية",
+    price: 70000,
+    type: "rent",
+    category: "محل تجاري",
+    location: "تقاطع شارع الملك فهد مع الستين",
+    area: 140,
+    rooms: 1,
+    bathrooms: 1,
+    age: 0,
+    description: "محل تجاري زاوية للإيجار السنوي، موقع مميز، واجهتين زجاجيتين، مساحة واسعة، ارتفاع 5 متر، نظام أمان متكامل",
+    imageUrl: "https://images.pexels.com/photos/248771/pexels-photo-248771.jpeg",
+    badges: {
+      featured: true,
+      exclusive: true,
+      pinned: true
+    }
+  },
+  {
+    id: "45",
+    title: "أرض سكنية على شارعين",
+    price: 850000,
+    type: "sale",
+    category: "أرض",
+    location: "حي النزهة",
+    area: 750,
+    rooms: 0,
+    bathrooms: 0,
+    age: 0,
+    description: "أرض سكنية للبيع على شارعين زاوية، مساحة كبيرة، في حي راقي، مخطط معتمد، جميع الخدمات متوفرة، صك إلكتروني جاهز",
+    imageUrl: "https://images.pexels.com/photos/280221/pexels-photo-280221.jpeg",
+    badges: {
+      featured: false,
+      exclusive: true,
+      pinned: false
+    }
+  },
+  {
+    id: "46",
+    title: "فيلا مع مسبح للإيجار الشهري",
+    price: 10000,
+    type: "rent",
+    category: "فيلا",
+    location: "الحمراء",
+    area: 360,
+    rooms: 5,
+    bathrooms: 4,
+    age: 4,
+    description: "فيلا فاخرة للإيجار الشهري، مسبح خاص، حديقة، غرفة خادمة، مطبخ مجهز، نظام منزل ذكي، مناسبة للعوائل والشركات",
+    imageUrl: "https://images.pexels.com/photos/53610/large-home-residential-house-architecture-53610.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: true
+    }
+  },
+  {
+    id: "47",
+    title: "شقة روف مميزة للبيع",
+    price: 700000,
+    type: "sale",
+    category: "شقة",
+    location: "حي النسيم",
+    area: 180,
+    rooms: 3,
+    bathrooms: 2,
+    age: 1,
+    description: "شقة روف مميزة للبيع، جلسة خارجية، إطلالة رائعة، تشطيب فاخر، مصعد خاص، مطبخ أمريكي، نظام تكييف مركزي",
+    imageUrl: "https://images.pexels.com/photos/1571470/pexels-photo-1571470.jpeg",
+    badges: {
+      featured: true,
+      exclusive: false,
+      pinned: false
+    }
+  },
+  {
+    id: "48",
+    title: "دور علوي حديث للإيجار",
+    price: 28000,
+    type: "rent",
+    category: "دور",
+    location: "الربوة",
+    area: 220,
+    rooms: 4,
+    bathrooms: 3,
+    age: 1,
+    description: "دور علوي حديث للإيجار السنوي، تشطيب فاخر، سطح خاص، مدخل مستقل، مطبخ راكب، قريب من الخدمات والمدارس",
+    imageUrl: "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+    badges: {
+      featured: false,
+      exclusive: true,
+      pinned: true
+    }
+  },
+  {
+    id: "49",
+    title: "عمارة استثمارية في موقع حيوي",
+    price: 6800000,
+    type: "sale",
+    category: "عمارة",
+    location: "شارع الملك عبدالعزيز",
+    area: 980,
+    rooms: 18,
+    bathrooms: 18,
+    age: 5,
+    description: "عمارة استثمارية في موقع حيوي، مكونة من 3 محلات تجارية و 6 شقق، دخل سنوي ممتاز، فرصة استثمارية مميزة",
+    imageUrl: "https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg",
+    badges: {
+      featured: true,
+      exclusive: true,
+      pinned: true
+    }
   }
 ];
 
-// المتغيرات الرئيسية
-let isAdmin = false;
-let selectedProperty = null;
-
-// وظائف التطبيق الرئيسية
-
-// حفظ العقارات في التخزين المحلي (لا نستخدمها الآن لأن لدينا بيانات ثابتة)
-function savePropertiesToLocalStorage() {
-  localStorage.setItem("realEstateProperties", JSON.stringify(properties));
-}
-
-// استرجاع العقارات من التخزين المحلي (لا نستخدمها الآن لأن لدينا بيانات ثابتة)
-function loadPropertiesFromLocalStorage() {
-  const savedProperties = localStorage.getItem("realEstateProperties");
-  return savedProperties ? JSON.parse(savedProperties) : [];
-}
-
-// تنسيق السعر
-function formatPrice(price) {
-  return new Intl.NumberFormat('ar-SA').format(price) + " ريال";
-}
-
-// عرض العقارات في الواجهة
-function displayProperties() {
-  // إخفاء رسالة التحميل
-  const loadingEl = document.getElementById("loadingProperties");
-  if(loadingEl) loadingEl.style.display = "none";
-
-  // إفراغ حاويات العقارات
-  const featuredContainer = document.getElementById("featuredProperties");
-  const container = document.getElementById("propertyListings");
-  
-  if (!featuredContainer || !container) return;
-  
-  featuredContainer.innerHTML = "";
-  container.innerHTML = "";
-  
-  // عرض العقارات المميزة والعادية
-  const featured = properties.filter(p => p.badge === "featured");
-  const others = properties;
-  
-  // ترتيب العقارات حسب الأولوية والتاريخ
-  const sortedProperties = [
-    ...featured.sort((a, b) => b.createdAt - a.createdAt),
-    ...others.sort((a, b) => b.createdAt - a.createdAt)
-  ];
-  
-  // تحديث عدادات العقارات في لوحة الإدارة
-  if (document.getElementById('propertiesCount')) {
-    document.getElementById('propertiesCount').textContent = properties.length;
+// دالة لتحميل العقارات
+function loadProperties() {
+  try {
+    // تحميل العقارات مباشرة من المصفوفة المضمنة
+    properties = [...realEstateProperties];
+    
+    // عرض العقارات
+    displayProperties(properties);
+    
+    // تحديث إحصائيات لوحة الإدارة إذا كان المستخدم مسؤولًا
+    if (isAdmin) {
+      updateAdminStatistics();
+      displayPropertiesTable(properties);
+    }
+    
+    console.log("تم تحميل البيانات: " + properties.length + " عقار");
+  } catch (error) {
+    console.error("حدث خطأ أثناء تحميل العقارات:", error);
   }
+}
+
+// عرض العقارات في الصفحة الرئيسية
+function displayProperties(propertiesArray) {
+  const container = document.getElementById('propertiesContainer');
+  if (!container) return;
   
-  if (document.getElementById('featuredCount')) {
-    document.getElementById('featuredCount').textContent = featured.length;
-  }
+  container.innerHTML = '';
   
-  // ملء قائمة العقارات في نموذج التعديل
-  populateEditPropertySelect();
-  
-  // عرض العقارات المميزة في القسم المخصص
-  featured.forEach(property => {
-    featuredContainer.appendChild(createPropertyCard(property, true));
-  });
-  
-  // عرض جميع العقارات
-  sortedProperties.forEach(property => {
-    container.appendChild(createPropertyCard(property, false));
+  propertiesArray.forEach(property => {
+    const propertyCard = createPropertyCard(property);
+    container.appendChild(propertyCard);
   });
 }
 
 // إنشاء بطاقة عقار
-function createPropertyCard(property, isFeatured) {
-  const colDiv = document.createElement("div");
-  colDiv.className = "col-md-6 col-lg-4 mb-4";
-
-  const price = property.price ? formatPrice(property.price) : "سعر غير محدد";
-  const image = property.mainImage || "https://via.placeholder.com/400x300?text=No+Image";
-  const type = property.type || "للبيع";
-
-  // استخلاص بيانات المساحة
-  const area = property.features?.area || "";
-  const rooms = property.features?.rooms || "";
-  const bathrooms = property.features?.bathrooms || "";
-
-  // إعداد الشارات الخاصة بالعقار
+function createPropertyCard(property) {
+  const card = document.createElement('div');
+  card.className = 'col';
+  
+  const isFeatured = property.badges && property.badges.featured;
+  const isExclusive = property.badges && property.badges.exclusive;
+  const isPinned = property.badges && property.badges.pinned;
+  
   let badgesHTML = '';
-
-  // إضافة شارات خاصة للعقارات المميزة
-  if (property.badge === "featured") {
-    badgesHTML += `
-      <div class="property-badge badge-premium">
-        <i class="bi bi-award-fill"></i> <span>مميز</span>
-      </div>
-    `;
-  }
-
-  if (property.badge === "حصري" || property.isExclusive || property.badge === "exclusive") {
-    badgesHTML += `
-      <div class="property-badge badge-exclusive">
-        <i class="bi bi-star-fill"></i> <span>حصري</span>
-      </div>
-    `;
-  }
-
-  if (property.badge === "عرض مثبت" || property.badge === "pinned") {
-    badgesHTML += `
-      <div class="property-badge badge-pinned">
-        <i class="bi bi-pin-angle-fill"></i> <span>مثبت</span>
+  if (isFeatured || isExclusive || isPinned) {
+    badgesHTML = `
+      <div class="badge-container">
+        ${isFeatured ? '<div class="property-badge badge-premium"><i class="bi bi-star-fill"></i> مميز</div>' : ''}
+        ${isExclusive ? '<div class="property-badge badge-exclusive"><i class="bi bi-gem"></i> حصري</div>' : ''}
+        ${isPinned ? '<div class="property-badge badge-pinned"><i class="bi bi-pin-angle-fill"></i> مثبت</div>' : ''}
       </div>
     `;
   }
   
-  // إنشاء بطاقة عقار بتصميم احترافي ومبسط
-  colDiv.innerHTML = `
-    <div class="real-estate-card ${isFeatured ? 'featured-property' : ''}" data-category="${property.category || ''}">
-      <div class="card-image-container">
-        <img src="${image}" alt="${property.title || 'عقار'}" class="card-image" loading="lazy">
-        <div class="image-overlay"></div>
-        
-        <div class="property-label ${type === 'للإيجار' ? 'rent-label' : 'sale-label'}">
-          <i class="bi ${type === 'للإيجار' ? 'bi-key' : 'bi-tags'}"></i>
-          <span>${type}</span>
-        </div>
-        
-        <div class="property-price">
-          <i class="bi bi-currency-dollar"></i>
-          <span>${price}</span>
-        </div>
-        
-        <div class="badge-container">
-          ${badgesHTML}
-        </div>
+  let quickActionsHTML = '';
+  if (isAdmin) {
+    quickActionsHTML = `
+      <div class="property-quick-actions">
+        <button class="quick-action-btn edit-btn" onclick="editProperty('${property.id}')">
+          <i class="bi bi-pencil-fill"></i>
+        </button>
+        <button class="quick-action-btn delete-btn" onclick="deleteProperty('${property.id}')">
+          <i class="bi bi-trash-fill"></i>
+        </button>
       </div>
-      
+    `;
+  }
+  
+  const priceFormatted = property.price.toLocaleString('ar-SA');
+  const propertyTypeLabel = property.type === 'sale' ? 'للبيع' : 'للإيجار';
+  const propertyTypeClass = property.type === 'sale' ? 'sale-label' : 'rent-label';
+  
+  card.innerHTML = `
+    <div class="real-estate-card ${isFeatured ? 'featured-property' : ''}">
+      <div class="card-image-container">
+        <img src="${property.imageUrl}" alt="${property.title}" class="card-image">
+        <div class="image-overlay"></div>
+        <div class="property-label ${propertyTypeClass}">
+          <i class="bi bi-${property.type === 'sale' ? 'tag-fill' : 'calendar-check'}"></i>
+          ${propertyTypeLabel}
+        </div>
+        <div class="property-price">
+          <i class="bi bi-cash-coin"></i>
+          ${priceFormatted} ${property.type === 'rent' && property.category === 'استراحة' ? 'ريال / يوم' : 'ريال'}
+        </div>
+        ${badgesHTML}
+        ${quickActionsHTML}
+      </div>
       <div class="card-content">
-        <h3 class="property-title">${property.title || ""}</h3>
-        
+        <h3 class="property-title">${property.title}</h3>
         <div class="property-address">
           <i class="bi bi-geo-alt-fill location-icon"></i>
-          <span>${property.location || ""}</span>
+          <span>${property.location}</span>
         </div>
-        
         <div class="property-category">
           <i class="bi bi-building"></i>
-          <span>${property.category || "عقار"}</span>
+          ${property.category}
         </div>
-        
         <div class="property-features">
-          ${rooms ? `<div class="feature"><i class="bi bi-door-closed"></i><span>${rooms}</span></div>` : ''}
-          ${bathrooms ? `<div class="feature"><i class="bi bi-droplet"></i><span>${bathrooms}</span></div>` : ''}
-          ${area ? `<div class="feature"><i class="bi bi-arrows-angle-expand"></i><span>${area} م²</span></div>` : ''}
+          <div class="feature">
+            <i class="bi bi-bounding-box"></i>
+            <span>${property.area} م²</span>
+          </div>
+          ${property.rooms > 0 ? `
+            <div class="feature">
+              <i class="bi bi-door-closed"></i>
+              <span>${property.rooms} غرف</span>
+            </div>
+          ` : ''}
+          ${property.bathrooms > 0 ? `
+            <div class="feature">
+              <i class="bi bi-droplet"></i>
+              <span>${property.bathrooms} حمام</span>
+            </div>
+          ` : ''}
         </div>
-        
         <div class="card-actions">
-          <a href="https://wa.me/966535342404?text=استفسار حول العقار: ${encodeURIComponent(property.title || '')}" class="action-button whatsapp-button" target="_blank">
+          <a href="https://wa.me/966555555555?text=استفسار%20عن%20${encodeURIComponent(property.title)}" class="action-button whatsapp-button">
             <i class="bi bi-whatsapp"></i>
-            <span>واتساب</span>
+            تواصل
           </a>
-          
-          <button class="action-button details-button" onclick="viewPropertyDetails('${property.key || property.id}')">
-            <i class="bi bi-eye-fill"></i>
-            <span>التفاصيل</span>
+          <button class="action-button details-button">
+            <i class="bi bi-info-circle"></i>
+            التفاصيل
           </button>
         </div>
       </div>
     </div>
   `;
   
-  return colDiv;
+  return card;
 }
 
-// عرض تفاصيل العقار
-window.viewPropertyDetails = function(propertyId) {
-  // البحث عن العقار 
-  const property = properties.find(p => (p.key === propertyId || p.id == propertyId));
+// عرض العقارات في جدول الإدارة
+function displayPropertiesTable(propertiesArray) {
+  const tableBody = document.getElementById('propertiesTableBody');
+  if (!tableBody) return;
   
-  if (!property) {
-    alert("لم يتم العثور على العقار المطلوب");
-    return;
-  }
+  tableBody.innerHTML = '';
   
-  // تعبئة بيانات العقار في صفحة التفاصيل
-  document.getElementById("detailTitle").textContent = property.title || "عقار";
-  document.getElementById("detailLocation").innerHTML = `
-    <i class="bi bi-geo-alt-fill location-icon"></i>
-    <span>${property.location || "غير محدد"}</span>
-  `;
-  
-  document.getElementById("detailPrice").innerHTML = `
-    <i class="bi bi-cash-coin"></i>
-    <span>${property.price ? formatPrice(property.price) : "سعر غير محدد"}</span>
-  `;
-  
-  const typeEl = document.getElementById("detailType");
-  typeEl.textContent = property.type || "للبيع";
-  typeEl.className = `property-detail-type ${property.type === 'للإيجار' ? 'rent' : 'sale'}`;
-  
-  document.getElementById("detailMainImage").src = property.mainImage || "https://via.placeholder.com/800x500?text=No+Image";
-  document.getElementById("detailMainImage").alt = property.title || "صورة العقار";
-  
-  // عرض ميزات العقار (المساحة، عدد الغرف، الحمامات)
-  const featuresEl = document.getElementById("detailFeatures");
-  featuresEl.innerHTML = "";
-  
-  const area = property.features?.area;
-  if (area) {
-    featuresEl.innerHTML += `
-      <div class="property-detail-feature">
-        <div class="feature-icon">
-          <i class="bi bi-arrows-angle-expand"></i>
-        </div>
-        <div class="feature-text">
-          <span class="feature-value">${area} م²</span>
-          <span class="feature-label">المساحة</span>
-        </div>
-      </div>
-    `;
-  }
-  
-  const rooms = property.features?.rooms;
-  if (rooms) {
-    featuresEl.innerHTML += `
-      <div class="property-detail-feature">
-        <div class="feature-icon">
-          <i class="bi bi-door-closed"></i>
-        </div>
-        <div class="feature-text">
-          <span class="feature-value">${rooms}</span>
-          <span class="feature-label">غرف النوم</span>
-        </div>
-      </div>
-    `;
-  }
-  
-  const bathrooms = property.features?.bathrooms;
-  if (bathrooms) {
-    featuresEl.innerHTML += `
-      <div class="property-detail-feature">
-        <div class="feature-icon">
-          <i class="bi bi-droplet"></i>
-        </div>
-        <div class="feature-text">
-          <span class="feature-value">${bathrooms}</span>
-          <span class="feature-label">الحمامات</span>
-        </div>
-      </div>
-    `;
-  }
-  
-  // إضافة نوع العقار كميزة
-  featuresEl.innerHTML += `
-    <div class="property-detail-feature">
-      <div class="feature-icon">
-        <i class="bi bi-building"></i>
-      </div>
-      <div class="feature-text">
-        <span class="feature-value">${property.category || "عقار"}</span>
-        <span class="feature-label">النوع</span>
-      </div>
-    </div>
-  `;
-  
-  // إضافة وصف العقار
-  document.getElementById("detailDescription").textContent = property.description || "لا يوجد وصف متاح لهذا العقار.";
-  
-  // تحديث رابط واتساب
-  document.getElementById("detailWhatsapp").href = `https://wa.me/966535342404?text=استفسار حول العقار: ${encodeURIComponent(property.title || '')}`;
-  
-  // إخفاء جميع الأقسام وإظهار تفاصيل العقار
-  document.querySelector('.welcome-section').style.display = 'none';
-  document.querySelector('.search-container').style.display = 'none';
-  document.querySelector('.category-tabs').style.display = 'none';
-  document.getElementById('featuredProperties').parentElement.style.display = 'none';
-  document.getElementById('allProperties').style.display = 'none';
-  document.getElementById('contactForm').style.display = 'none';
-  
-  document.getElementById('propertyDetails').style.display = 'block';
-  
-  // التمرير إلى الأعلى
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// العودة من صفحة التفاصيل
-function backToProperties() {
-  document.querySelector('.welcome-section').style.display = 'block';
-  document.querySelector('.search-container').style.display = 'block';
-  document.querySelector('.category-tabs').style.display = 'flex';
-  document.getElementById('featuredProperties').parentElement.style.display = 'block';
-  document.getElementById('allProperties').style.display = 'block';
-  document.getElementById('contactForm').style.display = 'block';
-  
-  document.getElementById('propertyDetails').style.display = 'none';
-}
-
-// البحث حسب الفئة
-function filterByCategory(category) {
-  const propertyCards = document.querySelectorAll('.real-estate-card');
-  
-  propertyCards.forEach(card => {
-    const cardCategory = card.getAttribute('data-category');
-    const cardElement = card.closest('.col-md-6');
+  propertiesArray.forEach(property => {
+    const row = document.createElement('tr');
+    const priceFormatted = property.price.toLocaleString('ar-SA');
     
-    if (category === 'all' || cardCategory === category) {
-      cardElement.style.display = 'block';
-    } else {
-      cardElement.style.display = 'none';
-    }
+    row.innerHTML = `
+      <td>${property.id}</td>
+      <td>${property.title}</td>
+      <td>${property.category}</td>
+      <td>${priceFormatted} ريال</td>
+      <td>${property.location}</td>
+      <td>
+        <span class="badge ${property.type === 'sale' ? 'bg-success' : 'bg-primary'}">
+          ${property.type === 'sale' ? 'للبيع' : 'للإيجار'}
+        </span>
+      </td>
+      <td>
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-primary" onclick="editProperty('${property.id}')">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-danger" onclick="deleteProperty('${property.id}')">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </td>
+    `;
+    
+    tableBody.appendChild(row);
   });
 }
 
-// البحث المتقدم عن العقارات
-function searchProperties() {
-  const location = document.getElementById('searchLocation').value;
-  const category = document.getElementById('searchCategory').value;
-  const type = document.getElementById('searchType').value;
-  const maxPrice = document.getElementById('searchPrice').value;
+// تحديث إحصائيات لوحة الإدارة
+function updateAdminStatistics() {
+  if (!document.getElementById('adminPanel')) return;
   
-  const propertyCards = document.querySelectorAll('.real-estate-card');
+  const totalProperties = properties.length;
+  const forSaleCount = properties.filter(p => p.type === 'sale').length;
+  const forRentCount = properties.filter(p => p.type === 'rent').length;
   
-  propertyCards.forEach(card => {
-    const cardElement = card.closest('.col-md-6');
-    let matchesFilter = true;
-    
-    // فلترة حسب الموقع
-    if (location && !card.querySelector('.property-address').textContent.includes(location)) {
-      matchesFilter = false;
-    }
-    
-    // فلترة حسب الفئة
-    if (category && card.getAttribute('data-category') !== category) {
-      matchesFilter = false;
-    }
-    
-    // فلترة حسب نوع العرض
-    if (type) {
-      const cardType = card.querySelector('.property-label').textContent.trim();
-      if (!cardType.includes(type)) {
-        matchesFilter = false;
-      }
-    }
-    
-    // فلترة حسب السعر
-    if (maxPrice) {
-      const priceText = card.querySelector('.property-price').textContent.trim();
-      const priceNumber = parseInt(priceText.replace(/[^\d]/g, ''));
-      
-      if (priceNumber > parseInt(maxPrice)) {
-        matchesFilter = false;
-      }
-    }
-    
-    // إظهار أو إخفاء العقار حسب نتيجة الفلترة
-    if (matchesFilter) {
-      cardElement.style.display = 'block';
-    } else {
-      cardElement.style.display = 'none';
-    }
-  });
+  document.getElementById('totalProperties').textContent = totalProperties;
+  document.getElementById('forSaleCount').textContent = forSaleCount;
+  document.getElementById('forRentCount').textContent = forRentCount;
   
-  // التمرير إلى قسم العقارات
-  document.getElementById('allProperties').scrollIntoView({ behavior: 'smooth' });
+  // تحديث عداد الزوار في لوحة الإدارة
+  const visitorCount = localStorage.getItem('visitorCount') || 0;
+  if (document.getElementById('adminVisitors')) {
+    document.getElementById('adminVisitors').textContent = visitorCount;
+  }
 }
 
-// ملء قائمة العقارات في نموذج التعديل
-function populateEditPropertySelect() {
-  const select = document.getElementById('selectPropertyToEdit');
-  if (!select) return;
+// فتح نموذج تعديل العقار
+function editProperty(propertyId) {
+  const property = properties.find(p => p.id === propertyId);
+  if (!property) return;
   
-  // إفراغ القائمة
-  while (select.options.length > 1) {
-    select.remove(1);
-  }
+  document.getElementById('propertyTitle').value = property.title;
+  document.getElementById('propertyPrice').value = property.price;
+  document.getElementById('propertyCategory').value = property.category;
+  document.getElementById('propertyType').value = property.type;
+  document.getElementById('propertyLocation').value = property.location;
+  document.getElementById('propertyArea').value = property.area;
+  document.getElementById('propertyRooms').value = property.rooms;
+  document.getElementById('propertyBathrooms').value = property.bathrooms;
+  document.getElementById('propertyAge').value = property.age;
+  document.getElementById('propertyDescription').value = property.description;
+  document.getElementById('propertyImageURL').value = property.imageUrl;
   
-  // إضافة العقارات المتاحة
-  properties.forEach(property => {
-    const option = document.createElement('option');
-    option.value = property.key || property.id;
-    option.textContent = property.title || `عقار ${property.id}`;
-    select.appendChild(option);
-  });
-}
-
-// تحميل عقار للتعديل
-function loadPropertyForEdit() {
-  const propertyId = document.getElementById('selectPropertyToEdit').value;
-  if (!propertyId) return;
+  document.getElementById('featuredBadge').checked = property.badges?.featured || false;
+  document.getElementById('exclusiveBadge').checked = property.badges?.exclusive || false;
+  document.getElementById('pinnedBadge').checked = property.badges?.pinned || false;
   
-  const property = properties.find(p => (p.key === propertyId || p.id == propertyId));
-  if (!property) {
-    alert("لم يتم العثور على العقار المطلوب");
-    return;
-  }
+  document.getElementById('savePropertyBtn').innerHTML = '<i class="bi bi-check-circle me-2"></i>تحديث العقار';
   
-  // تعبئة نموذج الإضافة ببيانات العقار
-  document.getElementById('propertyTitle').value = property.title || '';
-  document.getElementById('propertyCategory').value = property.category || '';
-  document.getElementById('propertyLocation').value = property.location || '';
-  document.getElementById('propertyPrice').value = property.price || '';
-  document.getElementById('propertyType').value = property.type || '';
-  document.getElementById('propertyRooms').value = property.features?.rooms || '';
-  document.getElementById('propertyBathrooms').value = property.features?.bathrooms || '';
-  document.getElementById('propertyArea').value = property.features?.area || '';
-  document.getElementById('propertyImage').value = property.mainImage || '';
-  document.getElementById('propertyDescription').value = property.description || '';
+  currentEditId = propertyId;
   
-  // تحديد الشارة إن وجدت
-  if (property.badge === 'featured') {
-    document.getElementById('featuredBadge').checked = true;
-  } else if (property.badge === 'exclusive') {
-    document.getElementById('exclusiveBadge').checked = true;
-  } else if (property.badge === 'pinned') {
-    document.getElementById('pinnedBadge').checked = true;
-  } else {
-    document.getElementById('noBadge').checked = true;
-  }
-  
-  // حفظ العقار المختار لتعديله لاحقًا
-  selectedProperty = property;
-  
-  // تغيير نص زر الإضافة إلى تحديث
-  const addButton = document.querySelector('#addPropertyForm button[type="submit"]');
-  addButton.innerHTML = '<i class="bi bi-check-circle me-2"></i>تحديث العقار';
-  
-  // التمرير إلى نموذج الإضافة
-  document.getElementById('addPropertyForm').scrollIntoView({ behavior: 'smooth' });
+  document.querySelector('.admin-form-container').scrollIntoView({ behavior: 'smooth' });
 }
 
 // حذف عقار
-function deleteProperty() {
-  const propertyId = document.getElementById('selectPropertyToEdit').value;
-  if (!propertyId || !confirm('هل أنت متأكد من حذف هذا العقار؟')) return;
+function deleteProperty(propertyId) {
+  if (!confirm('هل أنت متأكد من حذف هذا العقار؟')) return;
   
-  // البحث عن العقار وحذفه من المصفوفة
-  const index = properties.findIndex(p => (p.key === propertyId || p.id == propertyId));
+  properties = properties.filter(p => p.id !== propertyId);
+  displayProperties(properties);
+  displayPropertiesTable(properties);
+  updateAdminStatistics();
   
-  if (index !== -1) {
-    // حذف العقار من المصفوفة
-    properties.splice(index, 1);
-    
-    // تحديث عرض العقارات
-    displayProperties();
-    
-    // إعادة تعيين نموذج التعديل
-    document.getElementById('selectPropertyToEdit').value = '';
-    document.getElementById('loadPropertyForEdit').disabled = true;
-    document.getElementById('deleteProperty').disabled = true;
-    
-    alert('تم حذف العقار بنجاح!');
-  } else {
-    alert('لم يتم العثور على العقار المطلوب');
-  }
+  alert('تم حذف العقار بنجاح');
 }
 
-// إضافة عقار جديد أو تحديث عقار موجود
-function createOrUpdateProperty(event) {
-  event.preventDefault();
-  
-  // جمع بيانات النموذج
-  const title = document.getElementById('propertyTitle').value;
-  const category = document.getElementById('propertyCategory').value;
-  const location = document.getElementById('propertyLocation').value;
-  const price = parseFloat(document.getElementById('propertyPrice').value);
-  const type = document.getElementById('propertyType').value;
-  const rooms = document.getElementById('propertyRooms').value ? parseInt(document.getElementById('propertyRooms').value) : null;
-  const bathrooms = document.getElementById('propertyBathrooms').value ? parseInt(document.getElementById('propertyBathrooms').value) : null;
-  const area = document.getElementById('propertyArea').value ? parseInt(document.getElementById('propertyArea').value) : null;
-  const mainImage = document.getElementById('propertyImage').value;
-  const description = document.getElementById('propertyDescription').value;
-  
-  // الحصول على الشارة المختارة
-  const badge = document.querySelector('input[name="propertyBadge"]:checked').value;
-  
-  // إعداد كائن العقار
+// حفظ العقار (إضافة/تعديل)
+function saveProperty() {
   const propertyData = {
-    title,
-    category,
-    location,
-    price,
-    type,
-    features: {
-      rooms,
-      bathrooms,
-      area
-    },
-    mainImage,
-    description,
-    badge: badge || null,
-    createdAt: Date.now()
+    title: document.getElementById('propertyTitle').value,
+    price: parseFloat(document.getElementById('propertyPrice').value),
+    type: document.getElementById('propertyType').value,
+    category: document.getElementById('propertyCategory').value,
+    location: document.getElementById('propertyLocation').value,
+    area: parseFloat(document.getElementById('propertyArea').value) || 0,
+    rooms: parseInt(document.getElementById('propertyRooms').value) || 0,
+    bathrooms: parseInt(document.getElementById('propertyBathrooms').value) || 0,
+    age: parseInt(document.getElementById('propertyAge').value) || 0,
+    description: document.getElementById('propertyDescription').value,
+    imageUrl: document.getElementById('propertyImageURL').value,
+    badges: {
+      featured: document.getElementById('featuredBadge').checked,
+      exclusive: document.getElementById('exclusiveBadge').checked,
+      pinned: document.getElementById('pinnedBadge').checked
+    }
   };
   
-  // تحديث عقار موجود أو إضافة عقار جديد
-  if (selectedProperty) {
-    // تحديث عقار موجود
-    const index = properties.findIndex(p => (p.key === selectedProperty.key || p.id === selectedProperty.id));
-    
+  if (currentEditId) {
+    // تعديل عقار موجود
+    const index = properties.findIndex(p => p.id === currentEditId);
     if (index !== -1) {
-      // الحفاظ على المعرف والمفتاح الأصليين
-      propertyData.id = selectedProperty.id;
-      propertyData.key = selectedProperty.key;
-      
-      // تحديث العقار في المصفوفة
-      properties[index] = propertyData;
-      
-      console.log("تم تحديث العقار:", propertyData);
+      properties[index] = { ...propertyData, id: currentEditId };
     }
+    displayProperties(properties);
+    displayPropertiesTable(properties);
+    clearPropertyForm();
+    alert('تم تحديث العقار بنجاح');
   } else {
     // إضافة عقار جديد
-    propertyData.id = properties.length + 1;
-    propertyData.key = `local_${propertyData.id}`;
+    const newId = (parseInt(properties[0]?.id || "0") + 1).toString();
+    propertyData.id = newId;
     
-    // إضافة العقار للمصفوفة
-    properties.push(propertyData);
-    
-    console.log("تمت إضافة عقار جديد:", propertyData);
-  }
-  
-  // تحديث عرض العقارات
-  displayProperties();
-  
-  // إعادة تعيين النموذج والمتغيرات
-  document.getElementById('addPropertyForm').reset();
-  document.querySelector('#addPropertyForm button[type="submit"]').innerHTML = '<i class="bi bi-plus-circle me-2"></i>إضافة العقار';
-  selectedProperty = null;
-  
-  // إظهار رسالة نجاح
-  alert(selectedProperty ? 'تم تحديث العقار بنجاح!' : 'تمت إضافة العقار بنجاح!');
-  
-  // التمرير إلى قسم العقارات
-  document.getElementById('allProperties').scrollIntoView({ behavior: 'smooth' });
-}
-
-// إرسال نموذج استفسار
-function submitInquiry(event) {
-  event.preventDefault();
-  
-  const name = document.getElementById('inquiryName').value;
-  const phone = document.getElementById('inquiryPhone').value;
-  const message = document.getElementById('inquiryMessage').value;
-  
-  alert(`شكراً ${name}! تم استلام استفسارك وسنتواصل معك قريباً على الرقم ${phone}.`);
-  document.getElementById('propertyInquiryForm').reset();
-}
-
-// تحديث عداد الزائرين
-function updateVisitorCount() {
-  document.getElementById('visitorCount').innerHTML = '<i class="bi bi-people-fill"></i><span>10,000+</span>';
-}
-
-// تحديث التاريخ الحالي
-function updateCurrentDate() {
-  const now = new Date();
-  const options = { year: 'numeric', month: 'long', day: 'numeric' };
-  const currentDateEl = document.getElementById('currentDate');
-  if (currentDateEl) {
-    currentDateEl.textContent = now.toLocaleDateString('ar-SA', options);
+    properties.unshift(propertyData);
+    displayProperties(properties);
+    displayPropertiesTable(properties);
+    updateAdminStatistics();
+    clearPropertyForm();
+    alert('تم إضافة العقار بنجاح');
   }
 }
 
-// وظائف دورة الحياة للصفحة
-document.addEventListener('DOMContentLoaded', function() {
-  // تحميل العقارات واستعراضها
-  displayProperties();
+// مسح نموذج العقار
+function clearPropertyForm() {
+  document.getElementById('propertyForm').reset();
+  document.getElementById('savePropertyBtn').innerHTML = '<i class="bi bi-save me-2"></i>حفظ العقار';
+  currentEditId = null;
+}
+
+// ترتيب العقارات
+function sortProperties(sortType) {
+  let sortedProperties = [...properties];
   
-  // تحديث عداد الزائرين
-  updateVisitorCount();
-  
-  // تحديث التاريخ الحالي في لوحة الإدارة
-  updateCurrentDate();
-  
-  // إخفاء رسالة التحميل
-  const loadingEl = document.getElementById("loadingProperties");
-  if(loadingEl) loadingEl.style.display = "none";
-  
-  // أحداث النقر على الأزرار
-  document.getElementById('loginBtn').addEventListener('click', function() {
-    const loginPanel = document.getElementById('loginPanel');
-    loginPanel.style.display = loginPanel.style.display === 'block' ? 'none' : 'block';
-  });
-  
-  document.getElementById('submitLoginBtn').addEventListener('click', function() {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+  switch (sortType) {
+    case 'recent':
+      // افتراضياً يكون الترتيب حسب الأحدث (بفرض أن العقارات مضافة بترتيب عكسي)
+      break;
     
-    if (username === 'admin' && password === 'admin123') {
-      isAdmin = true;
-      
-      // إظهار لوحة الإدارة
-      document.getElementById('adminPanel').style.display = 'block';
-      
-      // إخفاء لوحة تسجيل الدخول
-      document.getElementById('loginPanel').style.display = 'none';
-      
-      // تغيير زر تسجيل الدخول
-      document.getElementById('loginBtn').innerHTML = '<i class="bi bi-person-check-fill"></i><span>مسؤول النظام</span>';
-      
-      // التمرير إلى لوحة الإدارة
-      document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
-    } else {
-      alert('بيانات تسجيل الدخول غير صحيحة، يرجى المحاولة مرة أخرى.');
-    }
-  });
+    case 'price-asc':
+      sortedProperties.sort((a, b) => a.price - b.price);
+      break;
+    
+    case 'price-desc':
+      sortedProperties.sort((a, b) => b.price - a.price);
+      break;
+    
+    case 'area-asc':
+      sortedProperties.sort((a, b) => a.area - b.area);
+      break;
+    
+    case 'area-desc':
+      sortedProperties.sort((a, b) => b.area - a.area);
+      break;
+  }
   
-  // أحداث النقر على أزرار التصنيف
-  document.querySelectorAll('.category-tab').forEach(tab => {
-    tab.addEventListener('click', function() {
-      // إزالة الكلاس النشط من جميع التبويبات
-      document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
-      
-      // إضافة الكلاس النشط للتبويب المختار
-      this.classList.add('active');
-      
-      // تطبيق الفلتر حسب الفئة
-      filterByCategory(this.getAttribute('data-category'));
-    });
-  });
-  
-  // البحث
-  document.getElementById('executeSearchBtn').addEventListener('click', searchProperties);
-  
-  // العودة من صفحة التفاصيل
-  document.getElementById('backToProperties').addEventListener('click', backToProperties);
-  
-  // تفعيل تعديل وحذف العقار
-  document.getElementById('selectPropertyToEdit').addEventListener('change', function() {
-    const hasValue = this.value !== '';
-    document.getElementById('loadPropertyForEdit').disabled = !hasValue;
-    document.getElementById('deleteProperty').disabled = !hasValue;
-  });
-  
-  document.getElementById('loadPropertyForEdit').addEventListener('click', loadPropertyForEdit);
-  document.getElementById('deleteProperty').addEventListener('click', deleteProperty);
-  
-  // إضافة أو تحديث عقار
-  document.getElementById('addPropertyForm').addEventListener('submit', createOrUpdateProperty);
-  
-  // إرسال طلب استفسار
-  document.getElementById('propertyInquiryForm').addEventListener('submit', submitInquiry);
-  
-  // مشاركة العقار
-  document.getElementById('shareProperty').addEventListener('click', function() {
-    if (navigator.share) {
-      navigator.share({
-        title: document.getElementById('detailTitle').textContent,
-        text: document.getElementById('detailDescription').textContent,
-        url: window.location.href
-      })
-      .catch((error) => console.log('Error sharing:', error));
-    } else {
-      alert('مشاركة العقار غير متاحة في هذا المتصفح');
-    }
-  });
-});
+  displayProperties(sortedProperties);
+}
+
+// إضافة دوال عالمية للاستخدام في HTML
+window.editProperty = editProperty;
+window.deleteProperty = deleteProperty;
+window.clearPropertyForm = clearPropertyForm;
