@@ -10,655 +10,274 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
   <!-- أيقونات Bootstrap -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-  <!-- ملف CSS الخاص بنا -->
+  <!-- تضمين ملف CSS -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- الهيدر وشريط التنقل -->
+  <!-- الهيدر -->
   <header class="header">
     <div class="header-container">
       <div class="header-logo">
         <div class="logo-icon-container">
-          <i class="bi bi-house-heart-fill header-logo-icon"></i>
+          <i class="bi bi-building header-logo-icon"></i>
         </div>
-        <h1>منصّة عقارك</h1>
+        <h1>عقارك</h1>
       </div>
-      
       <div class="header-buttons">
-        <div id="visitorCount">
-          <i class="bi bi-people-fill"></i>
-          <span>10,000+</span>
-        </div>
-        
-        <button class="search-btn" id="showSearchBtn">
-          <i class="bi bi-search"></i>
-          <span>البحث</span>
+        <div id="visitorCount"><i class="bi bi-eye"></i> <span id="visitorCountDisplay">0</span> زائر</div>
+        <button class="search-btn" id="searchBtn">
+          <i class="bi bi-search"></i> بحث
         </button>
-        
-        <button class="login-btn" id="loginBtn">
-          <i class="bi bi-person-circle"></i>
-          <span>تسجيل الدخول</span>
+        <button class="login-btn" id="loginButton">
+          <i class="bi bi-person-fill"></i> تسجيل الدخول
         </button>
       </div>
     </div>
   </header>
-  
+
   <!-- لوحة تسجيل الدخول -->
-  <div id="loginPanel">
-    <h5>تسجيل الدخول</h5>
-    <form id="loginForm">
-      <div class="mb-3">
-        <label for="username" class="form-label">اسم المستخدم</label>
-        <input type="text" class="form-control" id="username" placeholder="أدخل اسم المستخدم" required>
-      </div>
-      <div class="mb-3">
-        <label for="password" class="form-label">كلمة المرور</label>
-        <input type="password" class="form-control" id="password" placeholder="أدخل كلمة المرور" required>
-      </div>
-      <div class="mb-3 form-check">
-        <input type="checkbox" class="form-check-input" id="rememberMe">
-        <label class="form-check-label" for="rememberMe">تذكرني</label>
-      </div>
-      <button type="button" id="submitLoginBtn" class="btn btn-primary w-100">دخول</button>
-    </form>
+  <div id="loginPanel" class="shadow">
+    <h5>تسجيل الدخول للمسؤولين</h5>
+    <div class="form-floating mb-3">
+      <input type="text" class="form-control" id="usernameInput" placeholder="اسم المستخدم">
+      <label for="usernameInput">اسم المستخدم</label>
+    </div>
+    <div class="form-floating mb-3">
+      <input type="password" class="form-control" id="passwordInput" placeholder="كلمة المرور">
+      <label for="passwordInput">كلمة المرور</label>
+    </div>
+    <button class="btn btn-primary w-100" id="loginSubmitBtn">
+      <i class="bi bi-box-arrow-in-right"></i> دخول
+    </button>
   </div>
-  
-  <!-- المحتوى الرئيسي -->
-  <div class="main-container">
-    <!-- قسم الترحيب -->
-    <section class="welcome-section">
-      <div class="welcome-content">
-        <h2>ابحث عن منزل أحلامك</h2>
-        <p>نقدم لك أفضل العقارات المتاحة في الطائف بأسعار مناسبة وخيارات متنوعة. سواء كنت تبحث عن منزل للسكن أو فرصة استثمارية مميزة، ستجد كل ما تحتاجه هنا.</p>
-        <button class="cta-button">
-          <i class="bi bi-house-heart"></i>
-          <span>اكتشف العقارات</span>
-        </button>
-      </div>
-    </section>
-    
-    <!-- البحث والتصفية -->
-    <section class="search-container">
-      <div class="row search-row">
-        <div class="col-md-3 col-sm-6 mb-3">
-          <div class="form-group">
-            <label for="searchLocation">المنطقة</label>
-            <select class="form-select" id="searchLocation">
-              <option value="">كل المناطق</option>
-              <option value="حي الوسام">حي الوسام</option>
-              <option value="حي شهار">حي شهار</option>
-              <option value="حي الفيصلية">حي الفيصلية</option>
-              <option value="حي السلامة">حي السلامة</option>
-              <option value="حي الربوة">حي الربوة</option>
-              <option value="طريق الهدا">طريق الهدا</option>
-              <option value="وسط المدينة">وسط المدينة</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="col-md-3 col-sm-6 mb-3">
-          <div class="form-group">
-            <label for="searchCategory">نوع العقار</label>
-            <select class="form-select" id="searchCategory">
-              <option value="">كل العقارات</option>
-              <option value="فلل">فلل</option>
-              <option value="شقق">شقق</option>
-              <option value="أراضي">أراضي</option>
-              <option value="عمائر">عمائر</option>
-              <option value="محلات">محلات</option>
-              <option value="استراحات">استراحات</option>
-              <option value="مكاتب">مكاتب</option>
-              <option value="أدوار">أدوار</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="col-md-3 col-sm-6 mb-3">
-          <div class="form-group">
-            <label for="searchType">نوع العرض</label>
-            <select class="form-select" id="searchType">
-              <option value="">الكل</option>
-              <option value="للبيع">للبيع</option>
-              <option value="للإيجار">للإيجار</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="col-md-3 col-sm-6 mb-3">
-          <div class="form-group">
-            <label for="searchPrice">السعر (حتى)</label>
-            <input type="number" class="form-control" id="searchPrice" placeholder="أقصى سعر">
-          </div>
-        </div>
-        
-        <div class="col-12">
-          <button class="search-button" id="executeSearchBtn">
-            <i class="bi bi-search"></i>
-            <span>بحث</span>
-          </button>
-        </div>
-      </div>
-    </section>
-    
-    <!-- تبويبات التصنيفات -->
-    <div class="category-tabs">
-      <button class="category-tab active" data-category="all">
-        <i class="bi bi-grid-fill"></i>
-        <span>الكل</span>
-      </button>
-      <button class="category-tab" data-category="فلل">
-        <i class="bi bi-house-fill"></i>
-        <span>فلل</span>
-      </button>
-      <button class="category-tab" data-category="شقق">
-        <i class="bi bi-building"></i>
-        <span>شقق</span>
-      </button>
-      <button class="category-tab" data-category="أراضي">
-        <i class="bi bi-aspect-ratio"></i>
-        <span>أراضي</span>
-      </button>
-      <button class="category-tab" data-category="عمائر">
-        <i class="bi bi-buildings-fill"></i>
-        <span>عمائر</span>
-      </button>
-      <button class="category-tab" data-category="استراحات">
-        <i class="bi bi-house-heart"></i>
-        <span>استراحات</span>
-      </button>
-      <button class="category-tab" data-category="محلات">
-        <i class="bi bi-shop"></i>
-        <span>محلات</span>
-      </button>
-      <button class="category-tab" data-category="مكاتب">
-        <i class="bi bi-briefcase-fill"></i>
-        <span>مكاتب</span>
-      </button>
-    </div>
-    
-    <!-- العقارات المميزة -->
-    <section class="properties-section">
-      <div class="section-header">
-        <h2 class="section-title">
-          <i class="bi bi-award-fill"></i>
-          <span>العقارات المميزة</span>
-        </h2>
-        <a href="#allProperties" class="view-all-link">
-          <span>جميع العقارات</span>
-          <i class="bi bi-arrow-left-short"></i>
-        </a>
-      </div>
-      
-      <div class="row" id="featuredProperties">
-        <!-- سيتم إضافة بطاقات العقارات المميزة هنا بواسطة JavaScript -->
-        <div class="text-center p-4" id="loadingProperties">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">جاري التحميل...</span>
-          </div>
-        </div>
-      </div>
-    </section>
-    
-    <!-- تفاصيل العقار -->
-    <div id="propertyDetails">
-      <button class="back-button" id="backToProperties">
-        <i class="bi bi-arrow-right"></i>
-        <span>رجوع للعقارات</span>
-      </button>
-      
-      <div class="property-detail-header">
-        <h1 class="property-detail-title" id="detailTitle">عنوان العقار</h1>
-        <div class="property-detail-location" id="detailLocation">
-          <i class="bi bi-geo-alt-fill location-icon"></i>
-          <span>الموقع</span>
-        </div>
-        <div class="property-detail-price" id="detailPrice">
-          <i class="bi bi-cash-coin"></i>
-          <span>0 ريال</span>
-        </div>
-        <div class="property-detail-type sale" id="detailType">للبيع</div>
-      </div>
-      
-      <div class="property-image-gallery">
-        <img src="" alt="صورة العقار" class="main-property-image" id="detailMainImage">
-      </div>
-      
-      <div class="detail-section">
-        <h3 class="detail-section-title">
-          <i class="bi bi-info-circle-fill"></i>
-          <span>تفاصيل العقار</span>
-        </h3>
-        
-        <div class="property-feature-list" id="detailFeatures">
-          <!-- سيتم إضافة ميزات العقار هنا بواسطة JavaScript -->
-        </div>
-        
-        <div class="property-detail-description" id="detailDescription">
-          <!-- وصف العقار -->
-        </div>
-      </div>
-      
-      <div class="property-detail-actions">
-        <a href="#" class="property-detail-action-button property-whatsapp-button" id="detailWhatsapp" target="_blank">
-          <i class="bi bi-whatsapp"></i>
-          <span>تواصل عبر واتساب</span>
-        </a>
-        
-        <a href="tel:+966535342404" class="property-detail-action-button property-call-button">
-          <i class="bi bi-telephone-fill"></i>
-          <span>اتصل الآن</span>
-        </a>
-        
-        <button class="property-detail-action-button property-share-button" id="shareProperty">
-          <i class="bi bi-share-fill"></i>
-          <span>مشاركة</span>
-        </button>
-      </div>
-    </div>
-    
-    <!-- جميع العقارات -->
-    <section class="properties-section" id="allProperties">
-      <div class="section-header">
-        <h2 class="section-title">
-          <i class="bi bi-houses-fill"></i>
-          <span>جميع العقارات</span>
-        </h2>
-      </div>
-      
-      <div class="row" id="propertyListings">
-        <!-- سيتم إضافة بطاقات العقارات هنا بواسطة JavaScript -->
-      </div>
-    </section>
-    
-    <!-- القسم الإداري (مخفي افتراضيًا) -->
-    <div id="adminPanel">
+
+  <!-- الصفحة الرئيسية -->
+  <main class="container mt-4">
+    <div class="mb-4 p-3 bg-white rounded-3 shadow-sm">
       <div class="row">
-        <div class="col-12">
-          <div class="admin-header">
-            <h3 class="mb-0">لوحة إدارة العقارات</h3>
-            <p class="mb-0 text-muted">مرحباً بك في لوحة التحكم</p>
-            <div class="admin-stats d-flex flex-wrap">
-              <div class="stat-box">
-                <i class="bi bi-house-door-fill"></i>
-                <span class="counter" id="propertiesCount">0</span>
-                <span class="label">عقار</span>
-              </div>
-              <div class="stat-box">
-                <i class="bi bi-star-fill"></i>
-                <span class="counter" id="featuredCount">0</span>
-                <span class="label">مميز</span>
-              </div>
-              <div class="stat-box">
-                <i class="bi bi-people-fill"></i>
-                <span class="counter">10,000+</span>
-                <span class="label">زائر</span>
-              </div>
-              <div class="stat-box">
-                <i class="bi bi-calendar-check"></i>
-                <span class="counter" id="currentDate">-</span>
-                <span class="label">التاريخ</span>
-              </div>
-            </div>
+        <div class="col-md-8">
+          <h2 class="mb-0 fw-bold text-primary">عقارات في الطائف</h2>
+          <p class="mb-0 text-muted">تصفح أفضل العقارات المتاحة حالياً</p>
+        </div>
+        <div class="col-md-4 d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-sort-down"></i> ترتيب حسب
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+              <li><a class="dropdown-item" href="#" data-sort="recent">الأحدث</a></li>
+              <li><a class="dropdown-item" href="#" data-sort="price-asc">السعر: من الأقل الى الأعلى</a></li>
+              <li><a class="dropdown-item" href="#" data-sort="price-desc">السعر: من الأعلى الى الأقل</a></li>
+              <li><a class="dropdown-item" href="#" data-sort="area-asc">المساحة: من الأقل الى الأعلى</a></li>
+              <li><a class="dropdown-item" href="#" data-sort="area-desc">المساحة: من الأعلى الى الأقل</a></li>
+            </ul>
           </div>
         </div>
       </div>
-      
-      <div class="row mt-4">
-        <div class="col-md-8 mb-4">
-          <div class="admin-form-container p-4">
-            <div class="form-header mb-4">
-              <i class="bi bi-plus-circle me-2"></i>إضافة عقار جديد
-            </div>
-            <form id="addPropertyForm">
-              <div class="row mb-3">
-                <div class="col-md-8">
-                  <div class="mb-3">
-                    <label for="propertyTitle" class="form-label">عنوان العقار</label>
-                    <input type="text" class="form-control" id="propertyTitle" placeholder="أدخل عنوان العقار" required>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label for="propertyCategory" class="form-label">نوع العقار</label>
-                    <select class="form-select" id="propertyCategory" required>
-                      <option value="">اختر نوع العقار</option>
-                      <option value="فلل">فيلا</option>
-                      <option value="شقق">شقة</option>
-                      <option value="أراضي">أرض</option>
-                      <option value="عمائر">عمارة</option>
-                      <option value="محلات">محل تجاري</option>
-                      <option value="استراحات">استراحة</option>
-                      <option value="مكاتب">مكتب</option>
-                      <option value="أدوار">دور</option>
-                      <option value="شاليهات">شاليه</option>
-                      <option value="مزارع">مزرعة</option>
-                      <option value="مستودعات">مستودع</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="propertyLocation" class="form-label">الموقع</label>
-                    <input type="text" class="form-control" id="propertyLocation" placeholder="أدخل الموقع" required>
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <label for="propertyPrice" class="form-label">السعر</label>
-                    <input type="number" class="form-control" id="propertyPrice" placeholder="أدخل السعر" required>
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <label for="propertyType" class="form-label">نوع العرض</label>
-                    <select class="form-select" id="propertyType" required>
-                      <option value="">اختر النوع</option>
-                      <option value="للبيع">للبيع</option>
-                      <option value="للإيجار">للإيجار</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="row mb-3">
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label for="propertyRooms" class="form-label">عدد الغرف</label>
-                    <input type="number" class="form-control" id="propertyRooms" placeholder="عدد الغرف">
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label for="propertyBathrooms" class="form-label">عدد الحمامات</label>
-                    <input type="number" class="form-control" id="propertyBathrooms" placeholder="عدد الحمامات">
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label for="propertyArea" class="form-label">المساحة (م²)</label>
-                    <input type="number" class="form-control" id="propertyArea" placeholder="المساحة بالمتر المربع" required>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="mb-3 py-3 px-3 badge-section">
-                <label class="form-label">شارة خاصة</label>
-                <div class="badge-options">
-                  <div class="badge-option">
-                    <input type="radio" class="form-check-input me-2" name="propertyBadge" id="noBadge" value="" checked>
-                    <label class="form-check-label" for="noBadge">بدون شارة</label>
-                  </div>
-                  <div class="badge-option">
-                    <input type="radio" class="form-check-input me-2" name="propertyBadge" id="featuredBadge" value="featured">
-                    <label class="form-check-label featured-badge" for="featuredBadge">
-                      <i class="bi bi-award-fill me-1"></i>مميز
-                    </label>
-                  </div>
-                  <div class="badge-option">
-                    <input type="radio" class="form-check-input me-2" name="propertyBadge" id="exclusiveBadge" value="exclusive">
-                    <label class="form-check-label exclusive-badge" for="exclusiveBadge">
-                      <i class="bi bi-star-fill me-1"></i>حصري
-                    </label>
-                  </div>
-                  <div class="badge-option">
-                    <input type="radio" class="form-check-input me-2" name="propertyBadge" id="pinnedBadge" value="pinned">
-                    <label class="form-check-label pinned-badge" for="pinnedBadge">
-                      <i class="bi bi-pin-angle-fill me-1"></i>مثبت
-                    </label>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="mb-3 py-3 px-3 image-section">
-                <label for="propertyImage" class="form-label">رابط الصورة الرئيسية</label>
-                <input type="text" class="form-control" id="propertyImage" placeholder="أدخل رابط الصورة" required>
-                <div class="form-text">يمكنك استخدام روابط الصور من unsplash.com</div>
-              </div>
-              
-              <div class="mb-3 py-3 px-3 description-section">
-                <label for="propertyDescription" class="form-label">وصف العقار</label>
-                <textarea class="form-control" id="propertyDescription" rows="4" placeholder="أدخل وصف العقار" required></textarea>
-              </div>
-              
-              <div class="d-grid">
-                <button type="submit" class="btn btn-primary">
-                  <i class="bi bi-plus-circle me-2"></i>إضافة العقار
-                </button>
-              </div>
-            </form>
+    </div>
+
+    <!-- قائمة العقارات -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5" id="propertiesContainer">
+      <!-- سيتم إضافة بطاقات العقارات هنا باستخدام JavaScript -->
+    </div>
+  </main>
+
+  <!-- لوحة الإدارة -->
+  <div class="container" id="adminPanel">
+    <div class="mb-4 admin-header">
+      <h3 class="mb-3 fw-bold"><i class="bi bi-gear-fill me-2"></i>لوحة إدارة العقارات</h3>
+      <div class="row admin-stats">
+        <div class="col-md-3 col-6 mb-2">
+          <div class="stat-box">
+            <i class="bi bi-houses"></i>
+            <span class="counter" id="totalProperties">0</span>
+            <span class="label">إجمالي العقارات</span>
           </div>
         </div>
-        
-        <div class="col-md-4 mb-4">
-          <div class="admin-form-container p-4">
-            <div class="form-header mb-4">
-              <i class="bi bi-pencil-square me-2"></i>تحرير أو حذف عقار
-            </div>
-            
-            <form id="editPropertyForm">
-              <div class="mb-3">
-                <label for="selectPropertyToEdit" class="form-label">اختر العقار</label>
-                <select class="form-select" id="selectPropertyToEdit" required>
-                  <option value="">اختر عقار للتعديل</option>
-                  <!-- سيتم ملؤها بواسطة JavaScript -->
+        <div class="col-md-3 col-6 mb-2">
+          <div class="stat-box">
+            <i class="bi bi-cash-coin"></i>
+            <span class="counter" id="forSaleCount">0</span>
+            <span class="label">للبيع</span>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-2">
+          <div class="stat-box">
+            <i class="bi bi-calendar-check"></i>
+            <span class="counter" id="forRentCount">0</span>
+            <span class="label">للإيجار</span>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-2">
+          <div class="stat-box">
+            <i class="bi bi-eye"></i>
+            <span class="counter" id="adminVisitors">0</span>
+            <span class="label">الزوار</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- لوحة تحكم الإضافة والتعديل -->
+    <div class="row">
+      <div class="col-md-12 mb-4">
+        <div class="admin-form-container p-4">
+          <h4 class="form-header mb-4"><i class="bi bi-plus-circle me-2"></i>إضافة عقار جديد</h4>
+          <form id="propertyForm">
+            <div class="row mb-4">
+              <div class="col-md-6 mb-3">
+                <label for="propertyTitle" class="form-label fw-bold">عنوان العقار</label>
+                <input type="text" class="form-control" id="propertyTitle" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="propertyPrice" class="form-label fw-bold">السعر (ريال)</label>
+                <input type="number" class="form-control" id="propertyPrice" min="0" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="propertyCategory" class="form-label fw-bold">نوع العقار</label>
+                <select class="form-select" id="propertyCategory" required>
+                  <option value="">اختر نوع العقار</option>
+                  <option value="شقة">شقة</option>
+                  <option value="فيلا">فيلا</option>
+                  <option value="دور">دور</option>
+                  <option value="عمارة">عمارة</option>
+                  <option value="أرض">أرض</option>
+                  <option value="استراحة">استراحة</option>
+                  <option value="مزرعة">مزرعة</option>
+                  <option value="محل تجاري">محل تجاري</option>
+                  <option value="مكتب">مكتب</option>
                 </select>
               </div>
-              
-              <div class="d-flex gap-2">
-                <button type="button" class="btn btn-outline-primary flex-grow-1" id="loadPropertyForEdit" disabled>
-                  <i class="bi bi-pencil-square me-2"></i>تحرير
-                </button>
-                <button type="button" class="btn btn-outline-danger flex-grow-1" id="deleteProperty" disabled>
-                  <i class="bi bi-trash me-2"></i>حذف
-                </button>
+              <div class="col-md-6 mb-3">
+                <label for="propertyType" class="form-label fw-bold">نوع العرض</label>
+                <select class="form-select" id="propertyType" required>
+                  <option value="">اختر نوع العرض</option>
+                  <option value="sale">للبيع</option>
+                  <option value="rent">للإيجار</option>
+                </select>
               </div>
-            </form>
-            
-            <hr class="my-4">
-            
-            <div class="form-header mb-4">
-              <i class="bi bi-bell-fill me-2"></i>طلبات العملاء
-            </div>
-            
-            <div id="clientSubmissionsList" class="list-group mb-3">
-              <!-- سيتم ملؤها بواسطة JavaScript -->
-              <div class="text-center p-3 text-muted">
-                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-                لا توجد طلبات جديدة
+              <div class="col-md-6 mb-3">
+                <label for="propertyLocation" class="form-label fw-bold">الحي/المنطقة</label>
+                <input type="text" class="form-control" id="propertyLocation" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="propertyArea" class="form-label fw-bold">المساحة (متر مربع)</label>
+                <input type="number" class="form-control" id="propertyArea" min="0">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="propertyRooms" class="form-label fw-bold">عدد الغرف</label>
+                <input type="number" class="form-control" id="propertyRooms" min="0">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="propertyBathrooms" class="form-label fw-bold">عدد الحمامات</label>
+                <input type="number" class="form-control" id="propertyBathrooms" min="0">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="propertyAge" class="form-label fw-bold">عمر العقار (سنوات)</label>
+                <input type="number" class="form-control" id="propertyAge" min="0">
               </div>
             </div>
-          </div>
+
+            <div class="badge-section p-3 mb-4">
+              <label class="form-label fw-bold">شارات العقار</label>
+              <div class="badge-options">
+                <div class="badge-option me-4">
+                  <input class="form-check-input me-2" type="checkbox" id="featuredBadge">
+                  <label class="form-check-label featured-badge" for="featuredBadge">
+                    <i class="bi bi-star-fill me-1"></i> مميز
+                  </label>
+                </div>
+                <div class="badge-option me-4">
+                  <input class="form-check-input me-2" type="checkbox" id="exclusiveBadge">
+                  <label class="form-check-label exclusive-badge" for="exclusiveBadge">
+                    <i class="bi bi-gem me-1"></i> حصري
+                  </label>
+                </div>
+                <div class="badge-option">
+                  <input class="form-check-input me-2" type="checkbox" id="pinnedBadge">
+                  <label class="form-check-label pinned-badge" for="pinnedBadge">
+                    <i class="bi bi-pin-angle-fill me-1"></i> مثبت
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="image-section p-3 mb-4">
+              <label class="form-label fw-bold">صور العقار</label>
+              <div class="mb-3">
+                <label for="propertyImageURL" class="form-label">رابط الصورة الرئيسية</label>
+                <input type="text" class="form-control" id="propertyImageURL" placeholder="أدخل رابط الصورة" required>
+                <div class="form-text">يمكنك إدخال عدة روابط مفصولة بفاصلة للصور الإضافية</div>
+              </div>
+            </div>
+
+            <div class="description-section p-3 mb-4">
+              <label for="propertyDescription" class="form-label fw-bold">وصف العقار</label>
+              <textarea class="form-control" id="propertyDescription" rows="4" placeholder="أدخل وصفاً تفصيلياً للعقار..."></textarea>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+              <button type="button" class="btn btn-secondary" id="clearFormBtn">
+                <i class="bi bi-x-circle me-2"></i>مسح النموذج
+              </button>
+              <button type="submit" class="btn btn-primary btn-lg px-5" id="savePropertyBtn">
+                <i class="bi bi-save me-2"></i>حفظ العقار
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
-    
-    <!-- نموذج الاتصال والاستفسار -->
-    <section id="contactForm">
-      <h3 class="contact-title">تواصل معنا</h3>
-      <p class="contact-subtitle">نحن هنا لمساعدتك في العثور على العقار المناسب. أرسل استفسارك وسنرد عليك في أقرب وقت ممكن.</p>
-      
-      <form id="propertyInquiryForm">
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label for="inquiryName" class="form-label">الاسم الكامل</label>
-            <input type="text" class="form-control" id="inquiryName" placeholder="أدخل اسمك الكامل" required>
-          </div>
-          <div class="col-md-6 mb-3">
-            <label for="inquiryPhone" class="form-label">رقم الجوال</label>
-            <input type="tel" class="form-control" id="inquiryPhone" placeholder="05xxxxxxxx" required>
-          </div>
-        </div>
-        
-        <div class="mb-3">
-          <label for="inquiryMessage" class="form-label">الرسالة</label>
-          <textarea class="form-control" id="inquiryMessage" rows="4" placeholder="أخبرنا عن العقار الذي تبحث عنه" required></textarea>
-        </div>
-        
-        <button type="submit" class="submit-btn">
-          <i class="bi bi-send btn-icon"></i>
-          <span>إرسال الطلب</span>
-        </button>
-      </form>
-    </section>
+
+    <!-- جدول العقارات -->
+    <div class="admin-properties-list">
+      <h4 class="mb-3"><i class="bi bi-list-ul me-2"></i>قائمة العقارات</h4>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>العنوان</th>
+              <th>النوع</th>
+              <th>السعر</th>
+              <th>الموقع</th>
+              <th>الحالة</th>
+              <th>التحكم</th>
+            </tr>
+          </thead>
+          <tbody id="propertiesTableBody">
+            <!-- سيتم إضافة العقارات هنا بواسطة JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
-  
-  <!-- الفوتر -->
-  <footer class="footer">
-    <div class="footer-container">
+
+  <!-- Footer -->
+  <footer class="bg-dark text-white text-center p-4 mt-5">
+    <div class="container">
       <div class="row">
-        <div class="col-lg-4 col-md-6 mb-4">
-          <div class="footer-logo">
-            <div class="footer-logo-icon">
-              <i class="bi bi-house-heart-fill"></i>
-            </div>
-            <span>منصّة عقارك</span>
-          </div>
-          <p class="footer-description">نحن نقدم مجموعة مميزة من العقارات في الطائف لتناسب جميع الاحتياجات والميزانيات. تواصل معنا للعثور على عقارك المثالي.</p>
-          <div class="footer-social">
-            <a href="#" class="social-icon" aria-label="صفحة الفيسبوك">
-              <i class="bi bi-facebook"></i>
-            </a>
-            <a href="#" class="social-icon" aria-label="حساب تويتر">
-              <i class="bi bi-twitter-x"></i>
-            </a>
-            <a href="#" class="social-icon" aria-label="حساب انستغرام">
-              <i class="bi bi-instagram"></i>
-            </a>
-            <a href="#" class="social-icon" aria-label="قناة يوتيوب">
-              <i class="bi bi-youtube"></i>
-            </a>
-            <a href="https://wa.me/966535342404" class="social-icon" aria-label="رقم واتساب">
-              <i class="bi bi-whatsapp"></i>
-            </a>
-          </div>
+        <div class="col-md-6 mb-3 mb-md-0 text-md-end">
+          <h5 class="mb-3">عقارك - منصة عقارات الطائف</h5>
+          <p>المنصة الأولى للعقارات في الطائف، حيث العقار الذي تبحث عنه موجود هنا</p>
         </div>
-        
-        <div class="col-lg-2 col-md-6 mb-4">
-          <h4 class="footer-section-title">روابط سريعة</h4>
-          <ul class="footer-links">
-            <li>
-              <a href="#">
-                <i class="bi bi-house-door"></i>
-                <span>الرئيسية</span>
-              </a>
-            </li>
-            <li>
-              <a href="#allProperties">
-                <i class="bi bi-building"></i>
-                <span>العقارات</span>
-              </a>
-            </li>
-            <li>
-              <a href="#contactForm">
-                <i class="bi bi-envelope"></i>
-                <span>اتصل بنا</span>
-              </a>
-            </li>
-            <li>
-              <a href="#">
-                <i class="bi bi-info-circle"></i>
-                <span>من نحن</span>
-              </a>
-            </li>
-            <li>
-              <a href="#">
-                <i class="bi bi-shield-check"></i>
-                <span>سياسة الخصوصية</span>
-              </a>
-            </li>
-          </ul>
-        </div>
-        
-        <div class="col-lg-3 col-md-6 mb-4">
-          <h4 class="footer-section-title">أنواع العقارات</h4>
-          <ul class="footer-links">
-            <li>
-              <a href="#" data-category="فلل">
-                <i class="bi bi-house"></i>
-                <span>فلل للبيع</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" data-category="شقق">
-                <i class="bi bi-building"></i>
-                <span>شقق للإيجار</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" data-category="أراضي">
-                <i class="bi bi-aspect-ratio"></i>
-                <span>أراضي استثمارية</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" data-category="استراحات">
-                <i class="bi bi-house-heart"></i>
-                <span>استراحات للإيجار</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" data-category="محلات">
-                <i class="bi bi-shop"></i>
-                <span>محلات تجارية</span>
-              </a>
-            </li>
-          </ul>
-        </div>
-        
-        <div class="col-lg-3 col-md-6 mb-4">
-          <h4 class="footer-section-title">معلومات الاتصال</h4>
-          <div class="footer-contact-info">
-            <div class="footer-contact-item">
-              <div class="footer-contact-icon">
-                <i class="bi bi-geo-alt"></i>
-              </div>
-              <div class="footer-contact-content">
-                <strong>العنوان:</strong>
-                الطائف، المملكة العربية السعودية
-              </div>
-            </div>
-            <div class="footer-contact-item">
-              <div class="footer-contact-icon">
-                <i class="bi bi-telephone"></i>
-              </div>
-              <div class="footer-contact-content">
-                <strong>الجوال:</strong>
-                <a href="tel:+966535342404" style="color: inherit; text-decoration: none;">+966 53 534 2404</a>
-              </div>
-            </div>
-            <div class="footer-contact-item">
-              <div class="footer-contact-icon">
-                <i class="bi bi-envelope"></i>
-              </div>
-              <div class="footer-contact-content">
-                <strong>البريد الإلكتروني:</strong>
-                <a href="mailto:info@example.com" style="color: inherit; text-decoration: none;">info@example.com</a>
-              </div>
-            </div>
-          </div>
-          
-          <div class="footer-newsletter">
-            <h5 class="mb-3 text-white fs-6">اشترك في النشرة البريدية</h5>
-            <div class="newsletter-form">
-              <input type="email" class="newsletter-input" placeholder="أدخل بريدك الإلكتروني">
-              <button type="button" class="newsletter-button">
-                <i class="bi bi-send"></i>
-              </button>
-            </div>
-          </div>
+        <div class="col-md-6 text-md-start">
+          <h5 class="mb-3">تواصل معنا</h5>
+          <p><i class="bi bi-whatsapp me-2"></i> +966555555555</p>
+          <p><i class="bi bi-envelope me-2"></i> info@aqarik.com</p>
         </div>
       </div>
-      
-      <div class="copyright">
-        <p class="mb-0">جميع الحقوق محفوظة &copy; 2025 - منصّة عقارك</p>
+      <hr class="my-4">
+      <div class="small">
+        &copy; 2024 منصة عقارك - جميع الحقوق محفوظة
       </div>
     </div>
   </footer>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
-  <!-- استدعاء ملفات JavaScript -->
+  <!-- Custom JavaScript -->
   <script src="script.js"></script>
 </body>
 </html>
